@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实时音频录制与播放</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .visualizer-container {
+            width: 100%;
+            height: 150px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 12px;
+            background: rgba(0,0,0,0.5);
+            padding: 4px 8px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .status.active {
+            opacity: 1;
+            background: #e74c3c;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+
+        .controls {
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin: 0 10px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn.stop {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+        }
+
+        .volume-control {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+        }
+
+        .volume-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .volume-value {
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            transition: transform 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .info {
+            margin-top: 20px;
+            font-size: 14px;
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+
+        .error {
+            color: #ff6b6b;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .latency-info {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #aaa;
+            font-family: monospace;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            .btn {
+                padding: 12px 30px;
+                font-size: 16px;
+                margin: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>音频实时放大</h1>
+        
+        <div class="visualizer-container">
+            <canvas id="visualizer"></canvas>
+            <div class="status" id="status">● 运行中</div>
+        </div>
+
+        <div class="controls">
+            <button id="startBtn" class="btn">开始运行</button>
+            <button id="stopBtn" class="btn stop" disabled>停止运行</button>
+        </div>
+
+        <div class="volume-control">
+            <div class="volume-label">
+                <span>🔊 播放音量</span>
+                <span class="volume-value" id="volumeValue">100%</span>
+            </div>
+            <input type="range" id="volumeSlider" min="0" max="200" value="100">
+        </div>
+
+        <div class="latency-info" id="latencyInfo"></div>
+        
+        <div class="info">
+            <p>点击"开始运行"允许麦克风权限，即可实时听到自己的声音</p>
+            <p>支持调节音量至 200%</p>
+        </div>
+        
+        <div class="error" id="errorMsg"></div>
+    </div>
+
+    <script>
+        let audioContext;
+        let mediaStream;
+        let sourceNode;
+        let gainNode;
+        let analyser;
+        let isRecording = false;
+        let animationId;
+        let startTime;
+
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeValue = document.getElementById('volumeValue');
+        const canvas = document.getElementById('visualizer');
+        const canvasCtx = canvas.getContext('2d');
+        const status = document.getElementById('status');
+        const errorMsg = document.getElementById('errorMsg');
+        const latencyInfo = document.getElementById('latencyInfo');
+
+        // 设置 canvas 尺寸
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // 音量控制
+        volumeSlider.addEventListener('input', (e) => {
+            const value = e.target.value;
+            volumeValue.textContent = value + '%';
+            if (gainNode) {
+                gainNode.gain.value = value / 100;
+            }
+        });
+
+        // 开始录制
+        startBtn.addEventListener('click', async () => {
+            try {
+                errorMsg.style.display = 'none';
+                
+                // 创建音频上下文
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // 获取麦克风权限
+                mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: false,
+                        autoGainControl: false,
+                        noiseSuppression: false,
+                        latency: 0.01
+                    } 
+                });
+
+                // 创建音频源
+                sourceNode = audioContext.createMediaStreamSource(mediaStream);
+                
+                // 创建增益节点（音量控制）
+                gainNode = audioContext.createGain();
+                gainNode.gain.value = volumeSlider.value / 100;
+                
+                // 创建分析器（用于可视化）
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+                analyser.smoothingTimeConstant = 0.8;
+                
+                // 连接节点：源 -> 分析器 -> 增益 -> 输出
+                // 注意：为了实时播放，我们需要将麦克风输入直接连接到输出
+                // 但为了避免啸叫，通常需要耳机
+                
+                sourceNode.connect(analyser);
+                analyser.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                // 开始可视化
+                drawVisualizer();
+                
+                // 更新 UI
+                isRecording = true;
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                status.classList.add('active');
+                startTime = Date.now();
+                
+                updateLatency();
+
+            } catch (err) {
+                console.error('Error accessing microphone:', err);
+                errorMsg.textContent = '无法访问麦克风：' + (err.message || '请检查权限设置');
+                errorMsg.style.display = 'block';
+            }
+        });
+
+        // 停止录制
+        stopBtn.addEventListener('click', () => {
+            isRecording = false;
+            
+            // 停止所有轨道
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+            }
+            
+            // 断开连接
+            if (sourceNode) sourceNode.disconnect();
+            if (gainNode) gainNode.disconnect();
+            if (analyser) analyser.disconnect();
+            
+            // 关闭音频上下文
+            if (audioContext && audioContext.state !== 'closed') {
+                audioContext.close();
+            }
+            
+            // 停止动画
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            
+            // 清空画布
+            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 更新 UI
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            status.classList.remove('active');
+            latencyInfo.textContent = '';
+        });
+
+        // 可视化波形
+        function drawVisualizer() {
+            if (!isRecording) return;
+            
+            animationId = requestAnimationFrame(drawVisualizer);
+            
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteTimeDomainData(dataArray);
+            
+            canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            canvasCtx.lineWidth = 2;
+            canvasCtx.strokeStyle = '#00ff88';
+            canvasCtx.shadowBlur = 10;
+            canvasCtx.shadowColor = '#00ff88';
+            
+            canvasCtx.beginPath();
+            
+            const sliceWidth = canvas.width * 1.0 / bufferLength;
+            let x = 0;
+            
+            for (let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 128.0;
+                const y = v * canvas.height / 2;
+                
+                if (i === 0) {
+                    canvasCtx.moveTo(x, y);
+                } else {
+                    canvasCtx.lineTo(x, y);
+                }
+                
+                x += sliceWidth;
+            }
+            
+            canvasCtx.lineTo(canvas.width, canvas.height / 2);
+            canvasCtx.stroke();
+            
+            // 绘制音量指示器
+            const average = dataArray.reduce((a, b) => a + b) / bufferLength;
+            const volume = Math.abs(average - 128) / 128;
+            
+            const barWidth = 20;
+            const barHeight = volume * canvas.height * 0.8;
+            const barX = canvas.width - 30;
+            const barY = (canvas.height - barHeight) / 2;
+            
+            const gradient = canvasCtx.createLinearGradient(0, barY + barHeight, 0, barY);
+            gradient.addColorStop(0, '#00ff88');
+            gradient.addColorStop(0.5, '#ffff00');
+            gradient.addColorStop(1, '#ff0000');
+            
+            canvasCtx.fillStyle = gradient;
+            canvasCtx.fillRect(barX, barY, barWidth, barHeight);
+        }
+
+        // 更新延迟信息
+        function updateLatency() {
+            if (!isRecording) return;
+            
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+            const baseLatency = audioContext.baseLatency ? (audioContext.baseLatency * 1000).toFixed(2) : 'N/A';
+            const outputLatency = audioContext.outputLatency ? (audioContext.outputLatency * 1000).toFixed(2) : 'N/A';
+            
+            latencyInfo.textContent = `运行时间: ${elapsed}s | 基础延迟: ${baseLatency}ms | 输出延迟: ${outputLatency}ms`;
+            
+            setTimeout(updateLatency, 100);
+        }
+
+        // 页面卸载时清理
+        window.addEventListener('beforeunload', () => {
+            if (isRecording) {
+                stopBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>
