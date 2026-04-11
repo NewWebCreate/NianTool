@@ -1,6 +1,6 @@
 {
   "overrides": {
-    "blog.html": { "path": "blog" },
+    "1.html": { "path": "1" },
     "contact.html": { "path": "contact" }
   }
 }
