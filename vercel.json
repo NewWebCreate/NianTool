@@ -1,4 +1,14 @@
 {
-  "cleanUrls": true
+  "overrides": {
+    "blog.html": { "path": "blog" },
+    "contact.html": { "path": "contact" }
+  }
 }
-```[[__LINK_ICON]](https://vercel.co/docs/projects/project-configuration?f_link_type=f_linkinlinenote&flow_extra=eyJpbmxpbmVfZGlzcGxheV9wb3NpdGlvbiI6MCwiZG9jX3Bvc2l0aW9uIjowLCJkb2NfaWQiOiIxMTlkMjRhN2JjMmNiYjU1LTk3OGY2ZDkzNWJkZmE2OWIifQ%3D%3D "[__LINK_ICON]")
+```[[__LINK_ICON]](https://vercel.co/docs/build-output-api/v3/configuration?f_link_type=f_linkinlinenote&flow_extra=eyJkb2NfcG9zaXRpb24iOjAsImRvY19pZCI6ImFkNmFhODIwZWZiMDQ3YzAtZWNiOGQwZmYzYWJjNzVmMSIsImlubGluZV9kaXNwbGF5X3Bvc2l0aW9uIjowfQ%3D%3D "[__LINK_ICON]")
+
+### 注意事项
+- 配置文件必须在**根目录**，不能放子文件夹[[__LINK_ICON]](https://community.vercel.com/t/simple-html-website-clean-urls/244?f_link_type=f_linkinlinenote&flow_extra=eyJkb2NfaWQiOiIzOTk4ZmZjNGFlZGEwMzE5LTRhOGM3YjY0Yjg1NjMwOWQiLCJpbmxpbmVfZGlzcGxheV9wb3NpdGlvbiI6MCwiZG9jX3Bvc2l0aW9uIjowfQ%3D%3D "[__LINK_ICON]")
+- 链接统一写 `/about` 不要写 `/about.html`
+- 提交后等 Vercel 自动部署（1–2 分钟）
+
+要不要我给你一个可直接复制的完整 `vercel.json`（含 cleanUrls + 404 + 缓存）？
