@@ -1,53 +1,67 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>实时音频录制与播放</title>
+	<meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+	<title>音频实时放大 - 工具盒子</title>
+    <script>
+const t=localStorage.getItem('tb-theme')||'light';document.documentElement.setAttribute('data-theme',t);const s=document.createElement('style');s.textContent=`@keyframes m{100%{transform:rotate(360deg)}}#m{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:${t=='dark'?'#0f1117':'#f0f2f5'}}#m div{width:40px;height:40px;border:3px solid ${t=='dark'?'rgba(255,255,255,.1)':'rgba(0,0,0,.08)'}!important;border-top:3px solid #6366f1!important;border-radius:50%!important;animation:m .7s linear infinite!important}`;document.head.appendChild(s);const l=document.createElement('div');l.id='m';l.innerHTML='<div></div>';document.documentElement.appendChild(l);
+    </script>
+    <script src="../loading.js"></script>
+    <script src="../synchronize.js"></script> 
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-        }
-
-        .container {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            max-width: 500px;
+        .audio-tool-wrapper {
+            max-width: 520px;
             width: 90%;
-            text-align: center;
+            margin: 40px auto 60px;
+            padding: 32px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
         }
 
-        h1 {
-            margin-bottom: 30px;
-            font-size: 2em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        html[data-glass="on"] .audio-tool-wrapper {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px) saturate(120%);
+            -webkit-backdrop-filter: blur(20px) saturate(120%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        html[data-theme="dark"][data-glass="on"] {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        html[data-glass="off"] .audio-tool-wrapper {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+        }
+
+        html[data-theme="light"] .audio-tool-wrapper {
+            --card-bg: #ffffff;
+            --border-color: rgba(0,0,0,0.08);
+            --text-color: #1c1c1c;
+            --canvas-bg: rgba(0,0,0,0.04);
+        }
+
+        html[data-theme="dark"] .audio-tool-wrapper {
+            --card-bg: #1a1c23;
+            --border-color: rgba(255,255,255,0.06);
+            --text-color: #e8e8e8;
+            --canvas-bg: rgba(0,0,0,0.3);
+        }
+
+        .audio-tool-wrapper * {
+            color: var(--text-color);
+            box-sizing: border-box;
         }
 
         .visualizer-container {
             width: 100%;
-            height: 150px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            margin-bottom: 30px;
+            height: 160px;
+            background: var(--canvas-bg);
+            border-radius: 12px;
+            margin-bottom: 24px;
             position: relative;
             overflow: hidden;
-            border: 2px solid rgba(255, 255, 255, 0.2);
         }
 
         canvas {
@@ -56,397 +70,616 @@
             display: block;
         }
 
-        .status {
+        .rec-status {
             position: absolute;
             top: 10px;
-            left: 10px;
+            left: 12px;
             font-size: 12px;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.4);
             padding: 4px 8px;
-            border-radius: 4px;
+            border-radius: 6px;
             opacity: 0;
             transition: opacity 0.3s;
         }
 
-        .status.active {
+        .rec-status.active {
             opacity: 1;
-            background: #e74c3c;
+            background: #ef4444;
             animation: pulse 1.5s infinite;
         }
 
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
+            70% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+            100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
         }
 
-        .controls {
-            margin-bottom: 30px;
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
         }
 
-        .btn {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        .btn-group button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
             border: none;
-            color: white;
-            padding: 15px 40px;
-            font-size: 18px;
-            border-radius: 50px;
+            font-weight: 600;
+            font-size: 15px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            margin: 0 10px;
-            font-weight: bold;
-            letter-spacing: 1px;
+            transition: all 0.25s ease;
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        .run-btn {
+            background: #6366f1;
+            color: #fff !important;
         }
 
-        .btn:active {
-            transform: translateY(0);
+        .run-btn.active {
+            background: #ef4444;
         }
 
-        .btn:disabled {
-            background: #7f8c8d;
+        .record-btn {
+            background: #10b981;
+            color: #fff !important;
+        }
+
+        .record-btn:disabled {
+            background: #6b7280;
             cursor: not-allowed;
-            transform: none;
+            opacity: 0.6;
         }
 
-        .btn.stop {
-            background: linear-gradient(45deg, #2ecc71, #27ae60);
+        .record-btn.recording {
+            background: #ef4444;
+            animation: pulse 1.2s infinite;
         }
 
-        .volume-control {
-            margin-top: 30px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
+        .volume-group {
+            margin-bottom: 16px;
         }
 
         .volume-label {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
-            font-size: 16px;
+            margin-bottom: 8px;
+            font-size: 14px;
         }
 
         .volume-value {
-            font-weight: bold;
-            color: #ffd700;
+            font-weight: 600;
+            color: #6366f1;
         }
 
         input[type="range"] {
             width: 100%;
-            height: 8px;
-            border-radius: 5px;
-            background: rgba(255, 255, 255, 0.2);
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(100,116,139,0.2);
             outline: none;
             -webkit-appearance: none;
-            cursor: pointer;
+        }
+
+        html[data-theme="dark"] input[type="range"] {
+            background: rgba(148,163,184,0.15);
         }
 
         input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 24px;
-            height: 24px;
+            -appearance: none;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
-            background: #ffd700;
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-            transition: transform 0.2s;
+            background: #6366f1;
         }
 
-        input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: #ffd700;
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-        }
-
-        .info {
-            margin-top: 20px;
+        .option-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             font-size: 14px;
-            opacity: 0.8;
-            line-height: 1.6;
+            margin-bottom: 10px;
         }
 
-        .error {
-            color: #ff6b6b;
-            margin-top: 10px;
-            font-size: 14px;
+        .audio-error {
+            color: #ef4444;
+            font-size: 13px;
+            margin-top: 8px;
             display: none;
         }
 
-        .latency-info {
-            margin-top: 15px;
-            font-size: 12px;
-            color: #aaa;
-            font-family: monospace;
+        .record-list {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
         }
 
-        @media (max-width: 600px) {
-            .container {
-                padding: 20px;
-            }
-            
-            h1 {
-                font-size: 1.5em;
-            }
-            
-            .btn {
-                padding: 12px 30px;
-                font-size: 16px;
-                margin: 5px;
-            }
+        .record-list h4 {
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        #recordList {
+            max-height: 320px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        #recordList::-webkit-scrollbar {
+            width: 4px;
+        }
+        #recordList::-webkit-scrollbar-thumb {
+            background: rgba(99,102,241,0.4);
+            border-radius: 2px;
+        }
+
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.03);
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        html[data-theme="dark"] .record-item {
+            background: rgba(0,0,0,0.2);
+        }
+
+        .record-item .actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .record-item button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 2px 4px;
+        }
+
+        .clear-all {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #ef4444;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 0;
+        }
+
+        .audio-tip {
+            font-size: 13px;
+            opacity: 0.6;
+            line-height: 1.5;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>音频实时放大</h1>
-        
-        <div class="visualizer-container">
-            <canvas id="visualizer"></canvas>
-            <div class="status" id="status">● 运行中</div>
-        </div>
 
-        <div class="controls">
-            <button id="startBtn" class="btn">开始运行</button>
-            <button id="stopBtn" class="btn stop" disabled>停止运行</button>
-        </div>
+<section class="hero">
+  <div class="nian-card">
+    <bt>音频<x>实时</x>放大</bt>
+    <wz><x0>降噪扩音 + 手动录音 + WAV导出</x0></wz>
+  </div>
+</section>
 
-        <div class="volume-control">
-            <div class="volume-label">
-                <span>🔊 播放音量</span>
-                <span class="volume-value" id="volumeValue">100%</span>
-            </div>
-            <input type="range" id="volumeSlider" min="0" max="200" value="100">
-        </div>
+<div class="audio-tool-wrapper">
+  <div class="visualizer-container">
+    <canvas id="visualizer"></canvas>
+    <div class="rec-status" id="micStatus">● 已开启</div>
+  </div>
 
-        <div class="latency-info" id="latencyInfo"></div>
-        
-        <div class="info">
-            <p>点击"开始运行"允许麦克风权限，即可实时听到自己的声音</p>
-            <p>支持调节音量至 200%</p>
-        </div>
-        
-        <div class="error" id="errorMsg"></div>
+  <div class="btn-group">
+    <button id="toggleRunBtn" class="run-btn">开启麦克风</button>
+    <button id="toggleRecordBtn" class="record-btn" disabled>开始录音</button>
+  </div>
+
+  <div class="volume-group">
+    <div class="volume-label">
+      <span>音量放大</span>
+      <span class="volume-value" id="volValue">100%</span>
     </div>
+    <input type="range" id="volSlider" min="0" max="200" value="100">
+  </div>
 
-    <script>
-        let audioContext;
-        let mediaStream;
-        let sourceNode;
-        let gainNode;
-        let analyser;
-        let isRecording = false;
-        let animationId;
-        let startTime;
+  <div class="option-row">
+    <span><i class="fas fa-podcast" style="color:#3f78ff">实时智能降噪</i></span>
+    <input type="checkbox" id="denoiseCheck" checked>
+  </div>
 
-        const startBtn = document.getElementById('startBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const volumeSlider = document.getElementById('volumeSlider');
-        const volumeValue = document.getElementById('volumeValue');
-        const canvas = document.getElementById('visualizer');
-        const canvasCtx = canvas.getContext('2d');
-        const status = document.getElementById('status');
-        const errorMsg = document.getElementById('errorMsg');
-        const latencyInfo = document.getElementById('latencyInfo');
+  <div class="audio-error" id="audioError"></div>
 
-        // 设置 canvas 尺寸
-        function resizeCanvas() {
-            canvas.width = canvas.offsetWidth;
-            canvas.height = canvas.offsetHeight;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+  <div class="record-list" id="recordListSection">
+    <h4>最近录音记录（WAV）</h4>
+    <div id="recordList"></div>
+    <button class="clear-all" id="clearAllBtn" style="display:none;">清空所有录音</button>
+  </div>
 
-        // 音量控制
-        volumeSlider.addEventListener('input', (e) => {
-            const value = e.target.value;
-            volumeValue.textContent = value + '%';
-            if (gainNode) {
-                gainNode.gain.value = value / 100;
-            }
-        });
+  <div class="audio-tip">佩戴耳机或麦克风使用，避免啸叫 | 录音可导出为WAV格式</div>
+  <div class="audio-tip"><x2>相关玩法:</x2></br>
+    <x6>1.扩音器:</x6><wz>开启麦克风，手机或电脑可以连接(有线/无线)麦克风，同时将设备音量拉满(或者连接音响)，当声音重合时达到扩音器的效果。</wz>
+    <x6>2.助听器:</x6><wz>开启麦克风，<x4>推荐使用手机</x4>并连接蓝牙耳机，当声音重合时达到扩音器的效果。</wz>
 
-        // 开始录制
-        startBtn.addEventListener('click', async () => {
-            try {
-                errorMsg.style.display = 'none';
-                
-                // 创建音频上下文
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                
-                // 获取麦克风权限
-                mediaStream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: {
-                        echoCancellation: false,
-                        autoGainControl: false,
-                        noiseSuppression: false,
-                        latency: 0.01
-                    } 
-                });
+  
+  
+  </div>
+</div>
 
-                // 创建音频源
-                sourceNode = audioContext.createMediaStreamSource(mediaStream);
-                
-                // 创建增益节点（音量控制）
-                gainNode = audioContext.createGain();
-                gainNode.gain.value = volumeSlider.value / 100;
-                
-                // 创建分析器（用于可视化）
-                analyser = audioContext.createAnalyser();
-                analyser.fftSize = 2048;
-                analyser.smoothingTimeConstant = 0.8;
-                
-                // 连接节点：源 -> 分析器 -> 增益 -> 输出
-                // 注意：为了实时播放，我们需要将麦克风输入直接连接到输出
-                // 但为了避免啸叫，通常需要耳机
-                
-                sourceNode.connect(analyser);
-                analyser.connect(gainNode);
-                gainNode.connect(audioContext.destination);
+<script>
+let audioContext, mediaStream, sourceNode, gainNode, analyser;
+let denoiseNode, gateNode, destinationNode;
+let isRunning = false;
+let animId;
 
-                // 开始可视化
-                drawVisualizer();
-                
-                // 更新 UI
-                isRecording = true;
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-                status.classList.add('active');
-                startTime = Date.now();
-                
-                updateLatency();
+let recorder;
+let isRecording = false;
+let recordStartTime = 0;
 
-            } catch (err) {
-                console.error('Error accessing microphone:', err);
-                errorMsg.textContent = '无法访问麦克风：' + (err.message || '请检查权限设置');
-                errorMsg.style.display = 'block';
-            }
-        });
+const toggleRunBtn = document.getElementById('toggleRunBtn');
+const toggleRecordBtn = document.getElementById('toggleRecordBtn');
+const volSlider = document.getElementById('volSlider');
+const volValue = document.getElementById('volValue');
+const canvas = document.getElementById('visualizer');
+const ctx = canvas.getContext('2d');
+const micStatus = document.getElementById('micStatus');
+const audioError = document.getElementById('audioError');
+const denoiseCheck = document.getElementById('denoiseCheck');
+const recordList = document.getElementById('recordList');
+const clearAllBtn = document.getElementById('clearAllBtn');
 
-        // 停止录制
-        stopBtn.addEventListener('click', () => {
-            isRecording = false;
-            
-            // 停止所有轨道
-            if (mediaStream) {
-                mediaStream.getTracks().forEach(track => track.stop());
-            }
-            
-            // 断开连接
-            if (sourceNode) sourceNode.disconnect();
-            if (gainNode) gainNode.disconnect();
-            if (analyser) analyser.disconnect();
-            
-            // 关闭音频上下文
-            if (audioContext && audioContext.state !== 'closed') {
-                audioContext.close();
-            }
-            
-            // 停止动画
-            if (animationId) {
-                cancelAnimationFrame(animationId);
-            }
-            
-            // 清空画布
-            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 更新 UI
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-            status.classList.remove('active');
-            latencyInfo.textContent = '';
-        });
+// 统一安全读取录音
+function getRecords() {
+  try {
+    return JSON.parse(localStorage.getItem('audioRecords')) || [];
+  } catch (e) {
+    return [];
+  }
+}
 
-        // 可视化波形
-        function drawVisualizer() {
-            if (!isRecording) return;
-            
-            animationId = requestAnimationFrame(drawVisualizer);
-            
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-            analyser.getByteTimeDomainData(dataArray);
-            
-            canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            canvasCtx.lineWidth = 2;
-            canvasCtx.strokeStyle = '#00ff88';
-            canvasCtx.shadowBlur = 10;
-            canvasCtx.shadowColor = '#00ff88';
-            
-            canvasCtx.beginPath();
-            
-            const sliceWidth = canvas.width * 1.0 / bufferLength;
-            let x = 0;
-            
-            for (let i = 0; i < bufferLength; i++) {
-                const v = dataArray[i] / 128.0;
-                const y = v * canvas.height / 2;
-                
-                if (i === 0) {
-                    canvasCtx.moveTo(x, y);
-                } else {
-                    canvasCtx.lineTo(x, y);
-                }
-                
-                x += sliceWidth;
-            }
-            
-            canvasCtx.lineTo(canvas.width, canvas.height / 2);
-            canvasCtx.stroke();
-            
-            // 绘制音量指示器
-            const average = dataArray.reduce((a, b) => a + b) / bufferLength;
-            const volume = Math.abs(average - 128) / 128;
-            
-            const barWidth = 20;
-            const barHeight = volume * canvas.height * 0.8;
-            const barX = canvas.width - 30;
-            const barY = (canvas.height - barHeight) / 2;
-            
-            const gradient = canvasCtx.createLinearGradient(0, barY + barHeight, 0, barY);
-            gradient.addColorStop(0, '#00ff88');
-            gradient.addColorStop(0.5, '#ffff00');
-            gradient.addColorStop(1, '#ff0000');
-            
-            canvasCtx.fillStyle = gradient;
-            canvasCtx.fillRect(barX, barY, barWidth, barHeight);
-        }
+// 统一安全保存录音
+function saveRecords(records) {
+  try {
+    localStorage.setItem('audioRecords', JSON.stringify(records));
+  } catch (e) {}
+}
 
-        // 更新延迟信息
-        function updateLatency() {
-            if (!isRecording) return;
-            
-            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-            const baseLatency = audioContext.baseLatency ? (audioContext.baseLatency * 1000).toFixed(2) : 'N/A';
-            const outputLatency = audioContext.outputLatency ? (audioContext.outputLatency * 1000).toFixed(2) : 'N/A';
-            
-            latencyInfo.textContent = `运行时间: ${elapsed}s | 基础延迟: ${baseLatency}ms | 输出延迟: ${outputLatency}ms`;
-            
-            setTimeout(updateLatency, 100);
-        }
+function resizeCanvas() {
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
 
-        // 页面卸载时清理
-        window.addEventListener('beforeunload', () => {
-            if (isRecording) {
-                stopBtn.click();
-            }
-        });
-    </script>
+volSlider.addEventListener('input', () => {
+  const v = volSlider.value;
+  volValue.textContent = v + '%';
+  if (gainNode) gainNode.gain.value = v / 100;
+});
+
+denoiseCheck.addEventListener('change', () => {
+  if (isRunning) updateDenoise();
+});
+
+toggleRunBtn.addEventListener('click', async () => {
+  if (!isRunning) {
+    await startMic();
+  } else {
+    stopMic();
+  }
+});
+
+toggleRecordBtn.addEventListener('click', () => {
+  if (!isRecording) {
+    startRecord();
+  } else {
+    stopRecord();
+  }
+});
+
+async function startMic() {
+  try {
+    audioError.style.display = 'none';
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    await audioContext.resume();
+
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        latency: 0.01
+      }
+    });
+
+    sourceNode = audioContext.createMediaStreamSource(mediaStream);
+    gainNode = audioContext.createGain();
+    gainNode.gain.value = volSlider.value / 100;
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 2048;
+    analyser.smoothingTimeConstant = 0.8;
+
+    denoiseNode = audioContext.createBiquadFilter();
+    denoiseNode.type = 'highpass';
+    denoiseNode.frequency.value = 100;
+
+    gateNode = audioContext.createDynamicsCompressor();
+    gateNode.threshold.value = -40;
+    gateNode.ratio.value = 12;
+    gateNode.release.value = 0.2;
+
+    destinationNode = audioContext.createMediaStreamDestination();
+
+    sourceNode.connect(denoiseNode);
+    denoiseNode.connect(gateNode);
+    gateNode.connect(analyser);
+    analyser.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    gainNode.connect(destinationNode);
+
+    updateDenoise();
+    isRunning = true;
+    toggleRunBtn.textContent = '关闭麦克风';
+    toggleRunBtn.classList.add('active');
+    toggleRecordBtn.disabled = false;
+    micStatus.classList.add('active');
+    drawWave();
+  } catch (e) {
+    audioError.textContent = '麦克风错误：' + e.message;
+    audioError.style.display = 'block';
+  }
+}
+
+function updateDenoise() {
+  const on = denoiseCheck.checked;
+  if (on) {
+    denoiseNode.frequency.value = 120;
+    gateNode.threshold.value = -42;
+  } else {
+    denoiseNode.frequency.value = 20;
+    gateNode.threshold.value = -60;
+  }
+}
+
+function stopMic() {
+  isRunning = false;
+  cancelAnimationFrame(animId);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (isRecording) stopRecord();
+  mediaStream?.getTracks().forEach(t => t.stop());
+  sourceNode?.disconnect();
+  denoiseNode?.disconnect();
+  gateNode?.disconnect();
+  gainNode?.disconnect();
+  analyser?.disconnect();
+  audioContext?.close();
+  toggleRunBtn.textContent = '开启麦克风';
+  toggleRunBtn.classList.remove('active');
+  toggleRecordBtn.disabled = true;
+  micStatus.classList.remove('active');
+}
+
+// ————————————————————————————————————
+// 彻底修复方案：每次录音都全新创建，绝不复用
+// ————————————————————————————————————
+function startRecord() {
+  if (!destinationNode) return;
+
+  // 强制销毁旧实例，从根源避免状态错乱
+  if (recorder) {
+    try { recorder.stop(); } catch {}
+    recorder = null;
+  }
+
+  isRecording = true;
+  recordStartTime = Date.now();
+  const chunks = [];
+
+  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+    ? 'audio/webm;codecs=opus'
+    : 'audio/ogg;codecs=opus';
+
+  const rec = new MediaRecorder(destinationNode.stream, { mimeType });
+  recorder = rec;
+
+  rec.ondataavailable = e => {
+    if (e.data.size > 0) chunks.push(e.data);
+  };
+
+  rec.onstop = () => {
+    const duration = Date.now() - recordStartTime;
+    if (duration < 500) {
+      alert("录音时间过短，已忽略");
+      return;
+    }
+    if (chunks.length === 0) {
+      alert("未采集到音频");
+      return;
+    }
+    const blob = new Blob(chunks, { type: 'audio/webm' });
+    convertAndSaveWav(blob);
+  };
+
+  rec.start(100);
+  toggleRecordBtn.textContent = '停止录音';
+  toggleRecordBtn.classList.add('recording');
+}
+
+function stopRecord() {
+  if (!recorder || recorder.state === 'inactive') return;
+  isRecording = false;
+  try {
+    recorder.stop();
+  } catch {}
+  toggleRecordBtn.textContent = '开始录音';
+  toggleRecordBtn.classList.remove('recording');
+}
+
+async function convertAndSaveWav(blob) {
+  try {
+    const ab = await blob.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(ab);
+    const wavBuf = audioBufferToWav(audioBuffer);
+    const wavBlob = new Blob([wavBuf], { type: 'audio/wav' });
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const url = reader.result;
+      const item = {
+        time: new Date().toLocaleString(),
+        url: url
+      };
+
+      // 最稳定的保存逻辑
+      let records = getRecords();
+      records.unshift(item);
+      if (records.length > 30) records = records.slice(0, 30);
+      saveRecords(records);
+
+      renderRecords();
+    };
+    reader.readAsDataURL(wavBlob);
+  } catch (e) {
+    alert("保存失败：" + e.message);
+  }
+}
+
+function audioBufferToWav(buffer) {
+  const length = buffer.length * buffer.numberOfChannels * 2 + 44;
+  const arrayBuffer = new ArrayBuffer(length);
+  const view = new DataView(arrayBuffer);
+  const channels = [];
+  let offset = 0;
+  let pos = 0;
+
+  const setUint16 = (data) => { view.setUint16(pos, data, true); pos += 2; };
+  const setUint32 = (data) => { view.setUint32(pos, data, true); pos += 4; };
+
+  setUint32(0x46464952);
+  setUint32(length - 8);
+  setUint32(0x45564157);
+  setUint32(0x20746d66);
+  setUint32(16);
+  setUint16(1);
+  setUint16(buffer.numberOfChannels);
+  setUint32(buffer.sampleRate);
+  setUint32(buffer.sampleRate * 2 * buffer.numberOfChannels);
+  setUint16(buffer.numberOfChannels * 2);
+  setUint16(16);
+  setUint32(0x61746164);
+  setUint32(length - pos - 4);
+
+  for (let i = 0; i < buffer.numberOfChannels; i++)
+    channels.push(buffer.getChannelData(i));
+
+  while (pos < length) {
+    for (let i = 0; i < buffer.numberOfChannels; i++) {
+      let sample = Math.max(-1, Math.min(1, channels[i][offset]));
+      sample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+      view.setInt16(pos, sample, true);
+      pos += 2;
+    }
+    offset++;
+  }
+  return arrayBuffer;
+}
+
+function renderRecords() {
+  const records = getRecords();
+  recordList.innerHTML = '';
+
+  if (records.length === 0) {
+    clearAllBtn.style.display = 'none';
+    recordList.innerHTML = '<div style="font-size:13px;opacity:0.6;">暂无录音</div>';
+    return;
+  }
+
+  clearAllBtn.style.display = 'block';
+
+  records.forEach((item, index) => {
+    const div = document.createElement('div');
+    div.className = 'record-item';
+    div.innerHTML = `
+      <span>${item.time}</span>
+      <div class="actions">
+        <button class="play" data-index="${index}">播放</button>
+        <button class="export" data-index="${index}">导出WAV</button>
+        <button class="del" data-index="${index}">删除</button>
+      </div>
+    `;
+    recordList.appendChild(div);
+  });
+
+  document.querySelectorAll('.play').forEach(btn => {
+    btn.onclick = () => {
+      const i = btn.dataset.index;
+      const records = getRecords();
+      if (records[i]) new Audio(records[i].url).play();
+    };
+  });
+
+  document.querySelectorAll('.export').forEach(btn => {
+    btn.onclick = () => {
+      const i = btn.dataset.index;
+      const records = getRecords();
+      if (records[i]) {
+        const a = document.createElement('a');
+        a.href = records[i].url;
+        a.download = `录音_${Date.now()}.wav`;
+        a.click();
+      }
+    };
+  });
+
+  document.querySelectorAll('.del').forEach(btn => {
+    btn.onclick = () => {
+      const i = btn.dataset.index;
+      let records = getRecords();
+      records.splice(i, 1);
+      saveRecords(records);
+      renderRecords();
+    };
+  });
+}
+
+clearAllBtn.onclick = () => {
+  if (confirm('确定清空所有录音？')) {
+    localStorage.removeItem('audioRecords');
+    renderRecords();
+  }
+};
+
+function drawWave() {
+  if (!isRunning) return;
+  animId = requestAnimationFrame(drawWave);
+  const buf = analyser.frequencyBinCount;
+  const arr = new Uint8Array(buf);
+  analyser.getByteTimeDomainData(arr);
+  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#6366f1';
+  ctx.beginPath();
+  const w = canvas.width / buf;
+  let x = 0;
+  for (let i = 0; i < buf; i++) {
+    const y = (arr[i] / 128) * canvas.height / 2;
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    x += w;
+  }
+  ctx.lineTo(canvas.width, canvas.height / 2);
+  ctx.stroke();
+}
+
+window.addEventListener('load', () => {
+  setTimeout(() => document.getElementById('m')?.remove(), 300);
+  renderRecords();
+});
+</script>
+
 </body>
 </html>
