@@ -78,7 +78,8 @@ document.addEventListener('DOMContentLoaded', async function () {
       background: transparent;
       transition: all 0.25s ease;
     ">
-      小念工具 &copy; 2026 &mdash; 让效率成为习惯
+      小念工具 &copy; 2026 &mdash; 让效率成为习惯<br>本页总阅读量 <span id="busuanzi_page_pv" style="color:#0066ff;font-weight:bold"><i class="fa fa-spinner fa-spin"></i></span> 次
+
     </span>
   </footer>
   `;
