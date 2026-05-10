@@ -3,7 +3,8 @@
 <head>
 	<meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 	<title>音频实时放大 - 工具盒子</title>
-    <script>
+    <script src="//cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
+<script>
 const t=localStorage.getItem('tb-theme')||'light';document.documentElement.setAttribute('data-theme',t);const s=document.createElement('style');s.textContent=`@keyframes m{100%{transform:rotate(360deg)}}#m{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:${t=='dark'?'#0f1117':'#f0f2f5'}}#m div{width:40px;height:40px;border:3px solid ${t=='dark'?'rgba(255,255,255,.1)':'rgba(0,0,0,.08)'}!important;border-top:3px solid #6366f1!important;border-radius:50%!important;animation:m .7s linear infinite!important}`;document.head.appendChild(s);const l=document.createElement('div');l.id='m';l.innerHTML='<div></div>';document.documentElement.appendChild(l);
     </script>
     <script src="../loading.js"></script>
@@ -309,8 +310,6 @@ const t=localStorage.getItem('tb-theme')||'light';document.documentElement.setAt
   
   </div>
 </div>
-本页总阅读量 <span id="busuanzi_page_pv">加载中...</span> 次
-<script src="//cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
 
 <script>
 let audioContext, mediaStream, sourceNode, gainNode, analyser;
