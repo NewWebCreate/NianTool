@@ -11,7 +11,7 @@
 
     const tools = [
         { name:'增强声音',   desc:'录制并同步播放增强的声音',       icon:'fas fa-volume-up',        cat:'daily',   url:'./1.html' },
-        { name:'BMI 计算器',   desc:'计算身体质量指数',       icon:'fa-solid fa-heart-pulse',        cat:'daily',   url:'#' },
+        { name:'BMI 计算器',   desc:'计算身体质量指数',       icon:'fa-solid fa-heart-pulse',        cat:'daily',   url:'./2.html' },
         { name:'计时器',       desc:'在线倒计时与秒表',       icon:'fa-solid fa-stopwatch',           cat:'daily',   url:'#' },
         { name:'二维码生成',   desc:'文本/链接转二维码',      icon:'fa-solid fa-qrcode',              cat:'daily',   url:'#' },
         { name:'单位换算',     desc:'长度/重量/温度等',       icon:'fa-solid fa-right-left',          cat:'daily',   url:'#' },
