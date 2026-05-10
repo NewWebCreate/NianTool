@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+	<title>BMI 计算器 - 工具盒子</title>
+    <script>
+const t=localStorage.getItem('tb-theme')||'light';document.documentElement.setAttribute('data-theme',t);const s=document.createElement('style');s.textContent=`@keyframes m{100%{transform:rotate(360deg)}}#m{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:${t=='dark'?'#0f1117':'#f0f2f5'}}#m div{width:40px;height:40px;border:3px solid ${t=='dark'?'rgba(255,255,255,.1)':'rgba(0,0,0,.08)'}!important;border-top:3px solid #6366f1!important;border-radius:50%!important;animation:m .7s linear infinite!important}`;document.head.appendChild(s);const l=document.createElement('div');l.id='m';l.innerHTML='<div></div>';document.documentElement.appendChild(l);
+    </script>
+    <script src="../loading.js"></script>
+    <script src="../synchronize.js"></script> 
+    <script src="//cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
+
+    <style>
+        .audio-tool-wrapper {
+            max-width: 520px;
+            width: 90%;
+            margin: 40px auto 60px;
+            padding: 32px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        /* 玻璃态开启：微黑白灰度，不带彩色，微微质感 */
+        html[data-glass="on"] .audio-tool-wrapper {
+            /* 浅色：微灰白透 */
+            background: rgba(245, 247, 250, 0.12);
+            backdrop-filter: blur(22px) saturate(105%);
+            -webkit-backdrop-filter: blur(22px) saturate(105%);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        /* 深色模式玻璃态：微灰黑透 */
+        html[data-theme="dark"][data-glass="on"] .audio-tool-wrapper {
+            background: rgba(22, 24, 28, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* 玻璃态关闭 也保持微黑白半透 */
+        html[data-glass="off"] .audio-tool-wrapper {
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid rgba(0,0,0,0.07);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+
+        html[data-theme="dark"][data-glass="off"] .audio-tool-wrapper {
+            background: rgba(18, 20, 26, 0.88);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        html[data-theme="light"] .audio-tool-wrapper {
+            --card-bg: rgba(255, 255, 255, 0.88);
+            --border-color: rgba(0,0,0,0.07);
+            --text-color: #1c1c1c;
+            --canvas-bg: rgba(0, 0, 0, 0.04);
+        }
+
+        html[data-theme="dark"] .audio-tool-wrapper {
+            --card-bg: rgba(18, 20, 26, 0.88);
+            --border-color: rgba(255,255,255,0.05);
+            --text-color: #e8e8e8;
+            --canvas-bg: rgba(255, 255, 255, 0.03);
+        }
+
+        .audio-tool-wrapper * {
+            color: var(--text-color);
+            box-sizing: border-box;
+        }
+
+        .bmi-input-item {
+            margin-bottom: 20px;
+        }
+        .bmi-input-item label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .bmi-input-item input {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.25s;
+        }
+        .bmi-input-item input:focus {
+            border-color: #6366f1;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        .btn-group button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .run-btn {
+            background: #6366f1;
+            color: #fff !important;
+        }
+        .reset-btn {
+            background: #6b7280;
+            color: #fff !important;
+        }
+        /* 结果卡片同步微黑白玻璃质感 */
+        .bmi-result {
+            padding: 20px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0,0,0,0.05);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        html[data-theme="dark"] .bmi-result {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+        .bmi-val {
+            font-size: 36px;
+            font-weight: 700;
+            color: #6366f1;
+            margin: 10px 0;
+        }
+        .bmi-level {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .bmi-desc {
+            font-size: 13px;
+            opacity: 0.75;
+        }
+        .bmi-standard {
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+            font-size: 13px;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="nian-card">
+    <bt>BMI<x>健康</x>计算器</bt>
+    <wz><x0>身高体重录入 + 自动计算BMI + 健康等级评估</x0></wz>
+  </div>
+</section>
+
+<div class="audio-tool-wrapper">
+  <div class="bmi-input-item">
+    <label>身高 (cm)</label>
+    <input type="number" id="height" placeholder="请输入身高，例如：175">
+  </div>
+
+  <div class="bmi-input-item">
+    <label>体重 (kg)</label>
+    <input type="number" id="weight" placeholder="请输入体重，例如：65">
+  </div>
+
+  <div class="btn-group">
+    <button id="calcBtn" class="run-btn">立即计算</button>
+    <button id="resetBtn" class="reset-btn">重置数据</button>
+  </div>
+
+  <div class="bmi-result" id="bmiResult">
+    <div>你的 BMI 指数</div>
+    <div class="bmi-val">--</div>
+    <div class="bmi-level">等待计算</div>
+    <div class="bmi-desc">请输入身高体重后点击计算</div>
+  </div>
+
+  <div class="bmi-standard">
+    <strong>BMI 健康参考标准：</strong><br>
+    • 偏瘦：BMI ＜ 18.5<br>
+    • 正常：18.5 ≤ BMI ≤ 23.9<br>
+    • 超重：24.0 ≤ BMI ≤ 27.9<br>
+    • 肥胖：BMI ≥ 28.0
+  </div>
+</div>
+
+<script>
+const calcBtn = document.getElementById('calcBtn');
+const resetBtn = document.getElementById('resetBtn');
+const heightInput = document.getElementById('height');
+const weightInput = document.getElementById('weight');
+const bmiResult = document.getElementById('bmiResult');
+
+// 计算BMI
+calcBtn.addEventListener('click', () => {
+  const h = parseFloat(heightInput.value);
+  const w = parseFloat(weightInput.value);
+
+  if (!h || !w || h < 50 || h > 250 || w < 10 || w > 300) {
+    bmiResult.innerHTML = `
+      <div class="bmi-val" style="color:#ef4444">输入有误</div>
+      <div class="bmi-level">请输入合法身高体重</div>
+    `;
+    return;
+  }
+
+  // BMI公式：体重kg / 身高m²
+  const heightM = h / 100;
+  const bmi = (w / (heightM * heightM)).toFixed(1);
+  let level, color, desc;
+
+  if (bmi < 18.5) {
+    level = '偏瘦';
+    color = '#3f78ff';
+    desc = '建议适当增加营养摄入，合理增重';
+  } else if (bmi <= 23.9) {
+    level = '正常';
+    color = '#10b981';
+    desc = '身材标准，继续保持健康作息与运动';
+  } else if (bmi <= 27.9) {
+    level = '超重';
+    color = '#f59e0b';
+    desc = '建议控制饮食，增加有氧运动减脂';
+  } else {
+    level = '肥胖';
+    color = '#ef4444';
+    desc = '建议严格管控饮食，坚持规律运动减重';
+  }
+
+  bmiResult.innerHTML = `
+    <div>你的 BMI 指数</div>
+    <div class="bmi-val" style="color:${color}">${bmi}</div>
+    <div class="bmi-level" style="color:${color}">${level}</div>
+    <div class="bmi-desc">${desc}</div>
+  `;
+});
+
+// 重置
+resetBtn.addEventListener('click', () => {
+  heightInput.value = '';
+  weightInput.value = '';
+  bmiResult.innerHTML = `
+    <div>你的 BMI 指数</div>
+    <div class="bmi-val">--</div>
+    <div class="bmi-level">等待计算</div>
+    <div class="bmi-desc">请输入身高体重后点击计算</div>
+  `;
+});
+
+window.addEventListener('load', () => {
+  setTimeout(() => document.getElementById('m')?.remove(), 300);
+});
+</script>
+
+</body>
+</html>
