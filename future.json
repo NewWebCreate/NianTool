@@ -1,4 +1,16 @@
-{ name:'计时器',       desc:'在线倒计时与秒表',       icon:'fa-solid fa-stopwatch',           cat:'daily',   url:'#' },
+    // ==================== DATA ====================
+    const cats = {
+        daily:   { name:'日常工具', icon:'fa-solid fa-sun',           color:'#f97316' },
+        text:    { name:'文本处理', icon:'fa-solid fa-font',          color:'#06b6d4' },
+        image:   { name:'图片工具', icon:'fa-solid fa-image',         color:'#10b981' },
+        dev:     { name:'开发工具', icon:'fa-solid fa-code',          color:'#8b5cf6' },
+        finance: { name:'计算工具', icon:'fa-solid fa-calculator',    color:'#f59e0b' },
+        edu:     { name:'教育学习', icon:'fa-solid fa-graduation-cap',color:'#ef4444' },
+        fun:     { name:'生活娱乐', icon:'fa-solid fa-gamepad',       color:'#14b8a6' },
+    };
+
+    const tools = [
+        { name:'计时器',       desc:'在线倒计时与秒表',       icon:'fa-solid fa-stopwatch',           cat:'daily',   url:'#' },
         { name:'二维码生成',   desc:'文本/链接转二维码',      icon:'fa-solid fa-qrcode',              cat:'daily',   url:'#' },
         { name:'单位换算',     desc:'长度/重量/温度等',       icon:'fa-solid fa-right-left',          cat:'daily',   url:'#' },
         { name:'日期计算',     desc:'计算两日期间隔天数',     icon:'fa-solid fa-calendar-days',       cat:'daily',   url:'#' },
@@ -53,3 +65,7 @@
         { name:'抽签工具',     desc:'在线随机抽签',           icon:'fa-solid fa-wand-magic',          cat:'fun',     url:'#' },
         { name:'番茄钟',       desc:'25 分钟专注工作法',      icon:'fa-solid fa-bell',                cat:'fun',     url:'#' },
         { name:'习惯打卡',     desc:'每日习惯追踪记录',       icon:'fa-solid fa-check-double',        cat:'fun',     url:'#' },
+
+        ];
+
+    const catOrder = ['daily','text','image','dev','finance','edu','fun'];

@@ -10,8 +10,8 @@
     };
 
     const tools = [
-        { name:'增强声音',   desc:'录制并同步播放增强的声音',       icon:'fas fa-volume-up',        cat:'daily',   url:'1' },
-        { name:'BMI 计算器',   desc:'计算身体质量指数',       icon:'fa-solid fa-heart-pulse',        cat:'daily',   url:'2' },
+        { name:'增强声音',   desc:'录制并同步播放增强的声音',       icon:'fas fa-volume-up',        cat:'daily',   url:'n/1' },
+        { name:'BMI 计算器',   desc:'计算身体质量指数',       icon:'fa-solid fa-heart-pulse',        cat:'daily',   url:'n/2' },
         
     ];
 

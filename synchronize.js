@@ -244,8 +244,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     const removeBg = document.getElementById('removeBg');
 
     // 返回主页
-    backToHome.onclick = () => location.href = 'index.html';
-    mnHome.onclick = () => location.href = 'index.html';
+    backToHome.onclick = () => location.href = '../index.html';
+    mnHome.onclick = () => location.href = '../index.html';
 
     // 设置面板
     settingsBtn.onclick = () => settingsPanel.classList.add('open');
