@@ -1,0 +1,262 @@
+<html>
+ <head></head>
+ <body>
+  <meta charset="UTF-8">
+  <title>后台系统</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="index.js"></script>
+  <script src="chart.js"></script>
+  <style>.no-scrollbar::-webkit-scrollbar { display: none; }</style>
+  <div id="mask" class="fixed inset-0 bg-slate-900/50 z-40 hidden lg:hidden" onclick="toggleMenu()"></div> 
+<!-- 侧边栏 -->
+  <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-slate-900 text-slate-300 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 z-50 shadow-xl">
+   <div class="h-16 flex items-center px-6 text-white font-semibold border-b border-slate-800 tracking-tighter">
+    ADMIN PANEL
+   </div>
+   <nav class="p-4 space-y-1 text-sm">
+ <a href="#" class="block px-4 py-3 bg-slate-800 text-white rounded-lg">系统概况</a>
+ <a href="#" class="block px-4 py-3 hover:bg-slate-800 rounded-lg transition">流量监控</a>
+ <a href="#" class="block px-4 py-3 hover:bg-slate-800 rounded-lg transition">安全审计</a>
+   </nav>
+  </aside>
+<!-- 主体 -->
+  <div class="lg:ml-64 min-h-screen flex flex-col">
+   <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30">
+<!-- 恢复之前的图标按钮 --> 
+<button onclick="toggleMenu()" class="p-2 lg:hidden text-slate-600 hover:bg-slate-100 rounded-lg">
+     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+     </svg> </button>
+    <div class="flex items-center space-x-3">
+<span class="text-xs font-medium text-slate-500 uppercase">Nian</span> 
+<img src="./img/1.png" class="w-8 h-8 rounded-full border border-slate-200 object-cover" alt="Admin">
+    </div>
+   </header>
+   <main class="p-4 lg:p-8 space-y-6">
+<!-- 网站概况 -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+      <div class="text-slate-400 text-[10px] uppercase font-bold">
+       本站总访客数
+      </div>
+      <div class="text-xl font-bold mt-1">
+       <span id="busuanzi_site_uv"></span>人
+      </div>
+     </div>
+     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+      <div class="text-slate-400 text-[10px] uppercase font-bold">
+       本站总阅读量
+      </div>
+      <div class="text-xl font-bold mt-1">
+       <span id="busuanzi_site_pv"></span> 次
+      </div>
+     </div>
+     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+      <div class="text-slate-400 text-[10px] uppercase font-bold">
+       今日访客数
+      </div>
+      <div class="text-xl font-bold mt-1">
+       <span id="busuanzi_today_uv"></span> 人
+      </div>
+     </div>
+     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+      <div class="text-slate-400 text-[10px] uppercase font-bold">
+       今日访问量
+      </div>
+      <div class="text-xl font-bold mt-1">
+       <span id="busuanzi_today_pv"></span> 次
+      </div>
+     </div>
+    </div> 
+
+<!-- 折线图 
+    <div class="bg-white p-4 lg:p-6 rounded-xl border border-slate-200 shadow-sm">
+     <div class="text-xs font-bold mb-4 text-slate-500 uppercase tracking-wider">
+      流量增长趋势 (7日)
+     </div>
+     <div class="h-64">
+      <canvas id="lineChart"></canvas>
+     </div>
+    </div>
+-->
+<!-- ==========【网站响应检测板块】========== -->
+<div class="bg-white p-4 lg:p-6 rounded-xl border border-slate-200 shadow-sm">
+    <div class="flex items-center justify-between mb-4">
+        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            网站响应检测 · tool.wunian.fun
+        </div>
+        <button id="btnReCheck" onclick="checkSiteResponse()" class="px-3 py-1.5 bg-slate-900 text-white text-xs rounded-lg hover:bg-slate-700 transition">
+            重新检测
+        </button>
+    </div>
+    <div id="check-loading" class="py-6 text-center text-slate-400 text-sm">
+        正在检测网站响应...
+    </div>
+    <div id="check-error" class="py-6 text-center text-red-400 text-sm hidden">
+        检测请求失败或超时，请稍后重试
+    </div>
+    <div id="check-result" class="hidden">
+        <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+                <div class="text-[10px] uppercase text-slate-400 font-bold">HTTP状态码</div>
+                <div id="res-http-code" class="text-lg font-bold mt-1">-</div>
+            </div>
+            <div>
+                <div class="text-[10px] uppercase text-slate-400 font-bold">总耗时</div>
+                <div id="res-total-ms" class="text-lg font-bold mt-1">- ms</div>
+            </div>
+            <div>
+                <div class="text-[10px] uppercase text-slate-400 font-bold">服务器IP</div>
+                <div id="res-ip" class="text-lg font-bold mt-1 font-mono text-sm">-</div>
+            </div>
+            <div>
+                <div class="text-[10px] uppercase text-slate-400 font-bold">页面大小</div>
+                <div id="res-size" class="text-lg font-bold mt-1">-</div>
+            </div>
+            <div class="col-span-2">
+                <div class="text-[10px] uppercase text-slate-400 font-bold">最终访问地址</div>
+                <div id="res-final-url" class="text-sm font-bold mt-1 break-all text-slate-700">-</div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ==========网站响应检测结束 ========== -->
+
+<!-- 数据表格 
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+     <div class="overflow-x-auto no-scrollbar">
+      <table class="w-full text-left">
+       <thead class="bg-slate-50 border-b border-slate-100">
+        <tr>
+         <th class="px-4 py-3 text-[10px] text-slate-500 font-bold uppercase">节点名称</th>
+         <th class="px-4 py-3 text-[10px] text-slate-500 font-bold uppercase">IP地址</th>
+         <th class="px-4 py-3 text-[10px] text-slate-500 font-bold uppercase">状态</th>
+         <th class="px-4 py-3 text-[10px] text-slate-500 font-bold uppercase text-right">响应</th>
+        </tr>
+       </thead>
+       <tbody class="divide-y divide-slate-100">
+        <tr>
+         <td class="px-4 py-2 text-[11px] text-slate-900">CDN-East-01</td>
+         <td class="px-4 py-2 text-[11px] text-slate-500 font-mono">192.168.1.1</td>
+         <td class="px-4 py-2"><span class="px-2 py-0.5 bg-slate-900 text-white text-[9px] rounded">ACTIVE</span></td>
+         <td class="px-4 py-2 text-[11px] text-right font-semibold">12ms</td>
+        </tr>
+        <tr>
+         <td class="px-4 py-2 text-[11px] text-slate-900">CDN-North-02</td>
+         <td class="px-4 py-2 text-[11px] text-slate-500 font-mono">192.168.1.5</td>
+         <td class="px-4 py-2"><span class="px-2 py-0.5 bg-slate-200 text-slate-600 text-[9px] rounded">IDLE</span></td>
+         <td class="px-4 py-2 text-[11px] text-right font-semibold">24ms</td>
+        </tr>
+       </tbody>
+      </table>
+     </div>
+    </div>
+-->
+   </main>
+  </div>
+<script src="//cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
+  <script>
+        let isChecking = false;
+
+        function toggleMenu() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('mask').classList.toggle('hidden');
+        }
+
+        //初始化图表：做元素存在判断，找不到canvas直接跳过，不阻断代码
+        function initChart(){
+            const canvasEl = document.getElementById('lineChart');
+            if(!canvasEl){
+                console.log("折线图Canvas不存在，跳过图表初始化");
+                return;
+            }
+            const ctx = canvasEl.getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周天'],
+                    datasets: [{
+                        data: [40, 35, 55, 75, 60, 85, 70],
+                        borderColor: '#a400ff',
+                        backgroundColor: 'rgba(15, 23, 42, 0.05)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        // =========网站响应检测请求函数【独立任务，不受图表影响】=========
+        async function checkSiteResponse(){
+            if(isChecking) return;
+            isChecking = true;
+            const btn = document.getElementById("btnReCheck");
+            btn.disabled = true;
+            btn.innerText = "检测中...";
+
+            //重置UI
+            document.getElementById('check-loading').classList.remove('hidden');
+            document.getElementById('check-error').classList.add('hidden');
+            document.getElementById('check-result').classList.add('hidden');
+
+            //5秒超时控制器
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(),5000);
+
+            try {
+                console.log("开始发起网站检测请求");
+                const response = await fetch(
+                  "https://apione.apibyte.cn/sitecheck?url=https://tool.wunian.fun",
+                  {
+                    method: "GET",
+                    headers: {
+                        "X-Api-Key": "Shanhai-jMFqfvUPPVExNMwNcKxwK6pRigKJzCtSU7AWfL7Wg1eW6EIh"
+                    },
+                    signal: controller.signal
+                  }
+                );
+                clearTimeout(timeoutId);
+                const data = await response.json();
+                console.log("检测返回数据：",data);
+
+                document.getElementById('check-loading').classList.add('hidden');
+                document.getElementById('check-result').classList.remove('hidden');
+
+                document.getElementById('res-http-code').innerText = data?.data?.http_code ?? "-";
+                document.getElementById('res-total-ms').innerText = (data?.data?.timing?.total_ms ?? "-") + " ms";
+                document.getElementById('res-ip').innerText = data?.data?.primary_ip ?? "-";
+                document.getElementById('res-size').innerText = data?.data?.page_size_human ?? "-";
+                document.getElementById('res-final-url').innerText = data?.data?.final_url ?? "-";
+
+            } catch (err) {
+                clearTimeout(timeoutId);
+                console.error("检测异常/超时",err);
+                document.getElementById('check-loading').classList.add('hidden');
+                document.getElementById('check-error').classList.remove('hidden');
+            }finally{
+                isChecking = false;
+                btn.disabled = false;
+                btn.innerText = "重新检测";
+            }
+        }
+
+        //DOM加载完成，两个任务完全独立执行，互不阻塞
+        document.addEventListener("DOMContentLoaded",function(){
+            //任务1：可选，初始化图表（找不到元素直接跳过）
+            initChart();
+            //任务2：必执行，自动执行网站响应检测
+            checkSiteResponse();
+        })
+    </script>
+ </body>
+</html>
