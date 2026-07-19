@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <title>后台系统</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="index.js"></script>
-  <script src="chart.js"></script>
+  <script src="./index.js"></script>
   <style>.no-scrollbar::-webkit-scrollbar { display: none; }</style>
   <div id="mask" class="fixed inset-0 bg-slate-900/50 z-40 hidden lg:hidden" onclick="toggleMenu()"></div> 
 <!-- 侧边栏 -->
@@ -14,8 +13,8 @@
     ADMIN PANEL
    </div>
    <nav class="p-4 space-y-1 text-sm">
- <a href="./index.html" class="block px-4 py-3 bg-slate-800 text-white rounded-lg">系统概况</a>
- <a href="./control.html" class="block px-4 py-3 hover:bg-slate-800 rounded-lg transition">网站控制</a>
+ <a href="https://tool.wunian.fun/admin/overview.html" class="block px-4 py-3 bg-slate-800 text-white rounded-lg">系统概况</a>
+ <a href="https://tool.wunian.fun/admin/control.html" class="block px-4 py-3 hover:bg-slate-800 rounded-lg transition">网站控制</a>
  <a href="#" class="block px-4 py-3 hover:bg-slate-800 rounded-lg transition">安全审计</a>
    </nav>
   </aside>
@@ -67,16 +66,6 @@
      </div>
     </div> 
 
-<!-- 折线图 
-    <div class="bg-white p-4 lg:p-6 rounded-xl border border-slate-200 shadow-sm">
-     <div class="text-xs font-bold mb-4 text-slate-500 uppercase tracking-wider">
-      流量增长趋势 (7日)
-     </div>
-     <div class="h-64">
-      <canvas id="lineChart"></canvas>
-     </div>
-    </div>
--->
 <!-- ==========【网站响应检测板块】========== -->
 <div class="bg-white p-4 lg:p-6 rounded-xl border border-slate-200 shadow-sm">
     <div class="flex items-center justify-between mb-4">
@@ -161,41 +150,8 @@
             document.getElementById('mask').classList.toggle('hidden');
         }
 
-        //初始化图表：做元素存在判断，找不到canvas直接跳过，不阻断代码
-        function initChart(){
-            const canvasEl = document.getElementById('lineChart');
-            if(!canvasEl){
-                console.log("折线图Canvas不存在，跳过图表初始化");
-                return;
-            }
-            const ctx = canvasEl.getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周天'],
-                    datasets: [{
-                        data: [40, 35, 55, 75, 60, 85, 70],
-                        borderColor: '#a400ff',
-                        backgroundColor: 'rgba(15, 23, 42, 0.05)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
-                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
-                    }
-                }
-            });
-        }
 
-        // =========网站响应检测请求函数【独立任务，不受图表影响】=========
+        // =========网站响应检测请求函数【独立任务，不受其他任务影响】=========
         async function checkSiteResponse(){
             if(isChecking) return;
             isChecking = true;
@@ -251,9 +207,6 @@
 
         //DOM加载完成，两个任务完全独立执行，互不阻塞
         document.addEventListener("DOMContentLoaded",function(){
-            //任务1：可选，初始化图表（找不到元素直接跳过）
-            initChart();
-            //任务2：必执行，自动执行网站响应检测
             checkSiteResponse();
         })
     </script>
