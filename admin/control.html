@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>网站控制 - 后台系统</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>if(localStorage.getItem('nian-admin-auth')!=='1')location.href='./index.html';</script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .no-scrollbar::-webkit-scrollbar{display:none}
@@ -26,6 +27,9 @@
         <a href="https://tool.wunian.fun/admin/overview.html" class="block px-4 py-3 hover:bg-slate-800 rounded-lg transition">系统概况</a>
         <a href="https://tool.wunian.fun/admin/control.html" class="block px-4 py-3 bg-slate-800 text-white rounded-lg">网站控制</a>
         <a href="#" class="block px-4 py-3 hover:bg-slate-800 rounded-lg transition">安全审计</a>
+        <div class="border-t border-slate-800 mt-4 pt-4">
+            <a href="./index.html" onclick="localStorage.removeItem('nian-admin-auth')" class="block px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-lg transition">退出登录</a>
+        </div>
     </nav>
 </aside>
 
