@@ -395,6 +395,98 @@ document.addEventListener('DOMContentLoaded', async function () {
   }, 100);
 
 // ==============================
+// 维护模式（全局生效，含禁用选中/右键）
+// ==============================
+(function () {
+  var NIAN = 'nian-';
+  var BIN_URL = 'https://json.extendsclass.com/bin/733f987ad3a5';
+
+  // 注入维护模式 CSS
+  var mCss = [
+    '.' + NIAN + 'maintenance {',
+    '  position: fixed; inset: 0; z-index: 99999;',
+    '  background: var(--bg, #f0f2f5);',
+    '  display: none; align-items: center; justify-content: center;',
+    '  font-family: "Plus Jakarta Sans", -apple-system, sans-serif;',
+    '  flex-direction: column;',
+    '}',
+    '.' + NIAN + 'maintenance.' + NIAN + 'show { display: flex; }',
+    '.' + NIAN + 'maintenance .' + NIAN + 'm-card {',
+    '  background: var(--surface, rgba(255,255,255,0.72));',
+    '  border: 1px solid var(--border, rgba(0,0,0,0.08));',
+    '  border-radius: 28px; padding: 48px 40px; text-align: center;',
+    '  max-width: 460px; width: 90%;',
+    '  backdrop-filter: blur(20px) saturate(1.2);',
+    '  -webkit-backdrop-filter: blur(20px) saturate(1.2);',
+    '  box-shadow: 0 12px 40px rgba(0,0,0,0.12);',
+    '}',
+    '.' + NIAN + 'maintenance .' + NIAN + 'm-icon {',
+    '  font-size: 48px; color: var(--accent, #6366f1); margin-bottom: 20px;',
+    '}',
+    '.' + NIAN + 'maintenance .' + NIAN + 'm-title {',
+    '  font-size: 24px; font-weight: 800; color: var(--text-primary, #111827);',
+    '  margin-bottom: 12px;',
+    '}',
+    '.' + NIAN + 'maintenance .' + NIAN + 'm-text {',
+    '  font-size: 14px; color: var(--text-secondary, #6b7280); line-height: 1.7;',
+    '  white-space: pre-wrap;',
+    '}',
+    '[data-theme="dark"] .' + NIAN + 'maintenance { background: #0f1117; }'
+  ].join('\n');
+  var styleEl = document.createElement('style');
+  styleEl.textContent = mCss;
+  document.head.appendChild(styleEl);
+
+  // 注入维护模式 HTML
+  var maintenanceEl = document.createElement('div');
+  maintenanceEl.className = NIAN + 'maintenance';
+  maintenanceEl.innerHTML =
+    '<div class="' + NIAN + 'm-card">' +
+      '<div class="' + NIAN + 'm-icon"><i class="fa-solid fa-wrench"></i></div>' +
+      '<div class="' + NIAN + 'm-title" id="' + NIAN + 'mTitle"></div>' +
+      '<div class="' + NIAN + 'm-text" id="' + NIAN + 'mText"></div>' +
+    '</div>';
+  document.body.appendChild(maintenanceEl);
+
+  // 维护模式下禁用右键
+  document.addEventListener('contextmenu', function (e) {
+    if (maintenanceEl.classList.contains(NIAN + 'show')) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+
+  // 维护模式下禁用文本选中
+  document.addEventListener('selectstart', function (e) {
+    if (maintenanceEl.classList.contains(NIAN + 'show')) {
+      e.preventDefault();
+    }
+  }, true);
+
+  // 获取配置并应用维护模式
+  async function checkMaintenance() {
+    try {
+      var resp = await fetch(BIN_URL, { method: 'GET' });
+      if (!resp.ok) return;
+      var data = await resp.json();
+      if (data.maintenance) {
+        var titleEl = document.getElementById(NIAN + 'mTitle');
+        var textEl = document.getElementById(NIAN + 'mText');
+        titleEl.textContent = '网站维护中';
+        textEl.textContent = '我们正在进行系统维护和升级，\n暂时无法访问。请稍后再试。';
+        maintenanceEl.classList.add(NIAN + 'show');
+        document.body.style.overflow = 'hidden';
+        maintenanceEl.style.userSelect = 'none';
+        maintenanceEl.style.webkitUserSelect = 'none';
+      }
+    } catch (e) {
+      console.warn('[NianSync] 维护模式检查失败:', e.message);
+    }
+  }
+  checkMaintenance();
+})();
+
+// ==============================
 // 返回顶部按钮（SVG进度条在最上层 · 毛玻璃在下）
 // ==============================
 (function () {

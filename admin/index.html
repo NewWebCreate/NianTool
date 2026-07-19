@@ -15,22 +15,21 @@
    </div>
    <nav class="p-4 space-y-1 text-sm">
  <a href="#" class="block px-4 py-3 bg-slate-800 text-white rounded-lg">系统概况</a>
- <a href="#" class="block px-4 py-3 hover:bg-slate-800 rounded-lg transition">流量监控</a>
+ <a href="./control.html" class="block px-4 py-3 hover:bg-slate-800 rounded-lg transition">网站控制</a>
  <a href="#" class="block px-4 py-3 hover:bg-slate-800 rounded-lg transition">安全审计</a>
    </nav>
   </aside>
-<!-- 主体 -->
-  <div class="lg:ml-64 min-h-screen flex flex-col">
-   <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30">
-<!-- 恢复之前的图标按钮 --> 
-<button onclick="toggleMenu()" class="p-2 lg:hidden text-slate-600 hover:bg-slate-100 rounded-lg">
-     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
-     </svg> </button>
-    <div class="flex items-center space-x-3">
-<span class="text-xs font-medium text-slate-500 uppercase">Nian</span> 
-<img src="./img/1.png" class="w-8 h-8 rounded-full border border-slate-200 object-cover" alt="Admin">
-    </div>
-   </header>
+<div class="lg:ml-64 min-h-screen flex flex-col">
+    <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30">
+        <button onclick="toggleMenu()" class="p-2 lg:hidden text-slate-600 hover:bg-slate-100 rounded-lg">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+        </button>
+        <div class="text-sm font-semibold text-slate-700">系统概况</div>
+        <div class="flex items-center space-x-3">
+            <span class="text-xs font-medium text-slate-500 uppercase">XiaoNian</span>
+            <img src="../img/1.png" class="w-8 h-8 rounded-full border border-slate-200 object-cover" alt="Admin">
+        </div>
+    </header>
    <main class="p-4 lg:p-8 space-y-6">
 <!-- 网站概况 -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">

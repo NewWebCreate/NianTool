@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>网站控制 - 后台系统</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar{display:none}
+        .json-key{color:#7dd3fc}
+        .json-string{color:#86efac}
+        .json-number{color:#fbbf24}
+        .json-boolean{color:#c084fc}
+        .json-null{color:#f87171}
+        .json-brace{color:#94a3b8}
+    </style>
+</head>
+<body class="bg-slate-50">
+
+<div id="mask" class="fixed inset-0 bg-slate-900/50 z-40 hidden lg:hidden" onclick="toggleMenu()"></div>
+
+<!-- 侧边栏 -->
+<aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-slate-900 text-slate-300 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 z-50 shadow-xl">
+    <div class="h-16 flex items-center px-6 text-white font-semibold border-b border-slate-800 tracking-tighter">ADMIN PANEL</div>
+    <nav class="p-4 space-y-1 text-sm">
+        <a href="./index.html" class="block px-4 py-3 hover:bg-slate-800 rounded-lg transition">系统概况</a>
+        <a href="#" class="block px-4 py-3 bg-slate-800 text-white rounded-lg">网站控制</a>
+        <a href="#" class="block px-4 py-3 hover:bg-slate-800 rounded-lg transition">安全审计</a>
+    </nav>
+</aside>
+
+<!-- 主体 -->
+<div class="lg:ml-64 min-h-screen flex flex-col">
+    <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30">
+        <button onclick="toggleMenu()" class="p-2 lg:hidden text-slate-600 hover:bg-slate-100 rounded-lg">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+        </button>
+        <div class="text-sm font-semibold text-slate-700">网站控制</div>
+        <div class="flex items-center space-x-3">
+            <span class="text-xs font-medium text-slate-500 uppercase">XiaoNian</span>
+            <img src="../img/1.png" class="w-8 h-8 rounded-full border border-slate-200 object-cover" alt="Admin">
+        </div>
+    </header>
+
+    <main class="p-4 lg:p-8 space-y-6">
+
+        <!-- 状态栏 -->
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div id="syncStatusDot" class="w-2 h-2 rounded-full bg-slate-300"></div>
+                <span id="syncStatusText" class="text-xs text-slate-400">未连接</span>
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="toggleEditMode()" id="btnEditMode" class="px-3 py-1.5 bg-indigo-50 text-indigo-600 text-xs rounded-lg hover:bg-indigo-100 transition font-medium">
+                    切换为编辑模式
+                </button>
+                <button onclick="loadFromBin()" class="px-3 py-1.5 bg-slate-200 text-slate-700 text-xs rounded-lg hover:bg-slate-300 transition font-medium">
+                    &#x21bb; 从云端加载
+                </button>
+                <button onclick="saveToBin()" id="btnSave" class="px-3 py-1.5 bg-slate-900 text-white text-xs rounded-lg hover:bg-slate-700 transition font-medium">
+                    保存到云端
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== 普通模式面板（编辑模式下隐藏） ===== -->
+        <div id="normalSections">
+        <!-- ===== 维护模式 ===== -->
+        <div class="bg-white p-4 lg:p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">维护模式</div>
+                    <div class="text-[11px] text-slate-400 mt-0.5">开启后网站将显示维护页面，普通用户无法访问</div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="maintenanceToggle" class="sr-only peer" onchange="onMaintenanceChange()">
+                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
+            </div>
+            <div id="maintenanceHint" class="hidden">
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700">
+                    <span class="font-bold">&#x26a0;</span> 维护模式已开启，网站将对普通用户不可见。
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 开屏弹窗 ===== -->
+        <div class="bg-white p-4 lg:p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">开屏弹窗</div>
+                    <div class="text-[11px] text-slate-400 mt-0.5">用户访问网站时弹出的公告窗口，最多3个按钮</div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="popupToggle" class="sr-only peer" onchange="onPopupChange()">
+                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
+            </div>
+
+            <div id="popupSettings" class="space-y-4 hidden">
+                <!-- 弹窗标题 -->
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">弹窗标题</label>
+                    <input type="text" id="popupTitle" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400" placeholder="输入弹窗标题..." value="公告">
+                </div>
+
+                <!-- 弹窗内容 -->
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">弹窗内容</label>
+                    <textarea id="popupContent" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 resize-y" rows="3" placeholder="输入弹窗内容...">欢迎使用小念工具！</textarea>
+                </div>
+
+                <!-- 按钮设置 -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-[11px] font-bold text-slate-500 uppercase">按钮设置 <span class="text-slate-400 normal-case font-normal">(最多3个)</span></label>
+                        <button onclick="addButton()" id="btnAddBtn" class="px-2.5 py-1 bg-indigo-50 text-indigo-600 text-[11px] rounded-md hover:bg-indigo-100 transition font-medium">+ 添加按钮</button>
+                    </div>
+                    <div id="buttonsContainer" class="space-y-2"></div>
+                </div>
+
+                <!-- 恢复默认 -->
+                <div class="pt-2 border-t border-slate-100">
+                    <button onclick="restorePopupDefault()" class="px-3 py-1.5 bg-slate-100 text-slate-600 text-xs rounded-lg hover:bg-slate-200 transition font-medium">
+                        &#x21ba; 一键恢复默认
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 公告 ===== -->
+        <div class="bg-white p-4 lg:p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">页面公告</div>
+                    <div class="text-[11px] text-slate-400 mt-0.5">开启后在页面顶部固定显示公告内容</div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="announcementToggle" class="sr-only peer" onchange="onAnnouncementChange()">
+                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
+            </div>
+
+            <div id="announcementSettings" class="hidden">
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">公告内容</label>
+                <textarea id="announcementContent" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 resize-y" rows="2" placeholder="输入公告内容...">这是一条公告</textarea>
+                <div class="mt-2 bg-slate-50 rounded-lg p-3 border border-slate-100">
+                    <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">预览效果</div>
+                    <div id="announcementPreview" class="bg-indigo-600 text-white text-xs px-4 py-2 rounded-md text-center font-medium">这是一条公告</div>
+                </div>
+            </div>
+        </div>
+        </div>
+        <!-- /普通模式面板 -->
+
+        <!-- ===== JSON 数据面板 ===== -->
+        <div id="jsonSection" class="bg-white p-4 lg:p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <div class="text-xs font-bold text-slate-500 uppercase tracking-wider" id="jsonSectionTitle">JSON 数据预览</div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="toggleJsonEditing()" id="btnJsonEdit" class="hidden px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 transition font-medium">开始编辑</button>
+                    <button onclick="copyJson()" class="px-2.5 py-1 bg-slate-100 text-slate-600 text-[11px] rounded-md hover:bg-slate-200 transition font-medium">复制 JSON</button>
+                </div>
+            </div>
+            <!-- 语法高亮预览 -->
+            <pre id="jsonPreview" class="bg-slate-900 text-xs p-4 rounded-lg overflow-x-auto font-mono leading-relaxed"></pre>
+            <!-- 编辑区域 -->
+            <div id="jsonEditArea" class="hidden">
+                <textarea id="jsonEditor" class="w-full bg-slate-900 text-slate-300 text-xs p-4 rounded-lg font-mono leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500/30" rows="18" spellcheck="false"></textarea>
+                <div class="flex items-center justify-between mt-2">
+                    <span id="jsonEditStatus" class="text-[11px] text-slate-400"></span>
+                    <div class="flex space-x-2">
+                        <button onclick="cancelJsonEdit()" class="px-3 py-1.5 bg-slate-200 text-slate-600 text-xs rounded-lg hover:bg-slate-300 transition font-medium">取消</button>
+                        <button onclick="applyJsonEdit()" class="px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 transition font-medium">应用修改</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ===== 右下角控制台按钮 ===== -->
+<button onclick="toggleConsole()" id="consoleFab" class="fixed bottom-6 right-6 w-12 h-12 bg-slate-900 text-white rounded-full shadow-lg hover:bg-slate-700 transition-all z-50 flex items-center justify-center text-lg" title="控制台">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+</button>
+
+<!-- ===== 控制台悬浮窗口 ===== -->
+<div id="consolePanel" class="fixed bottom-20 right-6 w-96 max-w-[calc(100vw-2rem)] bg-slate-900 rounded-xl shadow-2xl z-50 hidden flex flex-col" style="height:320px">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-slate-700 flex-shrink-0">
+        <div class="flex items-center space-x-2">
+            <div class="w-2 h-2 rounded-full bg-green-400"></div>
+            <span class="text-xs font-semibold text-slate-300">控制台</span>
+        </div>
+        <div class="flex items-center space-x-1">
+            <button onclick="clearConsole()" class="px-2 py-1 text-[11px] text-slate-400 hover:text-white hover:bg-slate-700 rounded transition">清除</button>
+            <button onclick="toggleConsole()" class="p-1 text-slate-400 hover:text-white hover:bg-slate-700 rounded transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+    </div>
+    <div id="consoleOutput" class="flex-1 overflow-y-auto p-3 font-mono text-xs space-y-1 no-scrollbar"></div>
+</div>
+
+<script>
+// ==================== 配置 ====================
+var BIN_URL = 'https://json.extendsclass.com/bin/733f987ad3a5';
+
+// 默认数据
+var DEFAULT_DATA = {
+    maintenance: false,
+    popup: {
+        enabled: false,
+        title: '公告',
+        content: '欢迎使用小念工具！',
+        buttons: [
+            { text: '知道了', action: 'close' }
+        ]
+    },
+    announcement: {
+        enabled: false,
+        content: '这是一条公告'
+    }
+};
+
+// 当前数据
+var currentData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+var savedData = JSON.parse(JSON.stringify(DEFAULT_DATA)); // 用于对比是否已修改
+var isDirty = false;
+var isEditMode = false;
+
+// ==================== 初始化 ====================
+document.addEventListener('DOMContentLoaded', function() {
+    loadFromBin();
+});
+
+// ==================== 侧边栏 ====================
+function toggleMenu() {
+    document.getElementById('sidebar').classList.toggle('-translate-x-full');
+    document.getElementById('mask').classList.toggle('hidden');
+}
+
+// ==================== 控制台 ====================
+function toggleConsole() {
+    var panel = document.getElementById('consolePanel');
+    panel.classList.toggle('hidden');
+}
+
+function logConsole(msg, type) {
+    var output = document.getElementById('consoleOutput');
+    var time = new Date().toLocaleTimeString('zh-CN');
+    var color = '#94a3b8';
+    var prefix = 'INFO';
+    if (type === 'success') { color = '#4ade80'; prefix = 'OK'; }
+    else if (type === 'error') { color = '#f87171'; prefix = 'ERR'; }
+    else if (type === 'warn') { color = '#fbbf24'; prefix = 'WARN'; }
+    else if (type === 'api') { color = '#818cf8'; prefix = 'API'; }
+
+    var line = document.createElement('div');
+    line.style.color = color;
+    line.style.lineHeight = '1.5';
+    line.innerHTML = '<span style="color:#475569">[' + time + ']</span> <span style="font-weight:700">[' + prefix + ']</span> ' + escapeHtml(msg);
+    output.appendChild(line);
+    output.scrollTop = output.scrollHeight;
+}
+
+function clearConsole() {
+    document.getElementById('consoleOutput').innerHTML = '';
+    logConsole('控制台已清除', 'info');
+}
+
+function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ==================== 从云端加载 ====================
+async function loadFromBin() {
+    logConsole('正在从云端加载数据 (GET)...', 'api');
+    setSyncStatus('loading', '加载中...');
+
+    try {
+        var resp = await fetch(BIN_URL, { method: 'GET' });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        var data = await resp.json();
+
+        // 合并数据（云端可能缺少某些字段）
+        currentData = mergeData(DEFAULT_DATA, data);
+        applyDataToUI();
+        updateJsonPreview();
+
+        logConsole('数据加载成功 (HTTP ' + resp.status + ')', 'success');
+        clearDirty();
+        setSyncStatus('ok', '已同步');
+    } catch (e) {
+        logConsole('加载失败: ' + e.message + '，使用默认数据', 'error');
+        currentData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+        applyDataToUI();
+        updateJsonPreview();
+        setSyncStatus('error', '加载失败');
+    }
+}
+
+// ==================== 保存到云端 ====================
+async function saveToBin() {
+    collectDataFromUI();
+    updateJsonPreview();
+
+    logConsole('正在保存数据到云端 (PUT)...', 'api');
+    setSyncStatus('loading', '保存中...');
+
+    var btn = document.getElementById('btnSave');
+    btn.disabled = true;
+    btn.textContent = '保存中...';
+
+    try {
+        var resp = await fetch(BIN_URL, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(currentData)
+        });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        var result = await resp.json();
+
+        logConsole('保存成功 (HTTP ' + resp.status + ')', 'success');
+        logConsole('返回: ' + JSON.stringify(result).substring(0, 100), 'info');
+        clearDirty();
+        setSyncStatus('ok', '已保存');
+    } catch (e) {
+        logConsole('保存失败: ' + e.message, 'error');
+        setSyncStatus('error', '保存失败');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '保存到云端';
+    }
+}
+
+// ==================== 维护模式 ====================
+function onMaintenanceChange() {
+    currentData.maintenance = document.getElementById('maintenanceToggle').checked;
+    document.getElementById('maintenanceHint').classList.toggle('hidden', !currentData.maintenance);
+    markDirty();
+    updateJsonPreview();
+    logConsole('维护模式: ' + (currentData.maintenance ? '开启' : '关闭'), 'warn');
+}
+
+// ==================== 开屏弹窗 ====================
+function onPopupChange() {
+    var enabled = document.getElementById('popupToggle').checked;
+    document.getElementById('popupSettings').classList.toggle('hidden', !enabled);
+    currentData.popup.enabled = enabled;
+    markDirty();
+    updateJsonPreview();
+    logConsole('开屏弹窗: ' + (enabled ? '开启' : '关闭'), 'warn');
+}
+
+// ==================== 按钮管理 ====================
+function renderButtons() {
+    var container = document.getElementById('buttonsContainer');
+    container.innerHTML = '';
+    var buttons = currentData.popup.buttons;
+
+    for (var i = 0; i < buttons.length; i++) {
+        (function(idx) {
+            var btn = buttons[idx];
+            var div = document.createElement('div');
+            div.className = 'flex items-center space-x-2 bg-slate-50 rounded-lg p-2.5 border border-slate-100';
+            div.innerHTML =
+                '<span class="text-[10px] text-slate-400 font-bold w-5">#' + (idx + 1) + '</span>' +
+                '<input type="text" class="flex-1 px-2.5 py-1.5 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400" placeholder="按钮文字" value="' + escapeAttr(btn.text) + '" onchange="updateButton(' + idx + ', \'text\', this.value)">' +
+                '<select class="px-2 py-1.5 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white" onchange="onButtonActionChange(' + idx + ', this.value)">' +
+                    '<option value="close"' + (btn.action === 'close' ? ' selected' : '') + '>关闭弹窗</option>' +
+                    '<option value="link"' + (btn.action === 'link' ? ' selected' : '') + '>跳转链接</option>' +
+                '</select>' +
+                (btn.action === 'link' ? '<input type="text" class="w-32 px-2.5 py-1.5 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400" placeholder="输入跳转链接..." value="' + escapeAttr(btn.link || '') + '" onchange="updateButton(' + idx + ', \'link\', this.value)">' : '') +
+                (buttons.length > 1 ? '<button onclick="removeButton(' + idx + ')" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition" title="删除"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>' : '');
+            container.appendChild(div);
+        })(i);
+    }
+
+    // 更新添加按钮状态
+    document.getElementById('btnAddBtn').disabled = buttons.length >= 3;
+    document.getElementById('btnAddBtn').style.opacity = buttons.length >= 3 ? '0.4' : '1';
+}
+
+function addButton() {
+    if (currentData.popup.buttons.length >= 3) return;
+    currentData.popup.buttons.push({ text: '按钮' + (currentData.popup.buttons.length + 1), action: 'close' });
+    renderButtons();
+    updateJsonPreview();
+    logConsole('添加按钮 #' + currentData.popup.buttons.length, 'info');
+}
+
+function removeButton(index) {
+    var removed = currentData.popup.buttons.splice(index, 1)[0];
+    renderButtons();
+    updateJsonPreview();
+    logConsole('删除按钮: "' + removed.text + '"', 'warn');
+}
+
+function updateButton(index, field, value) {
+    currentData.popup.buttons[index][field] = value;
+    markDirty();
+    updateJsonPreview();
+}
+
+function onButtonActionChange(index, action) {
+    currentData.popup.buttons[index].action = action;
+    if (action === 'link' && !currentData.popup.buttons[index].link) {
+        currentData.popup.buttons[index].link = 'https://';
+    }
+    renderButtons();
+    markDirty();
+    updateJsonPreview();
+    logConsole('按钮 #' + (index+1) + ' 动作改为: ' + (action === 'close' ? '关闭弹窗' : '跳转链接'), 'info');
+}
+
+function restorePopupDefault() {
+    currentData.popup.title = '公告';
+    currentData.popup.content = '欢迎使用小念工具！';
+    currentData.popup.buttons = [{ text: '知道了', action: 'close' }];
+
+    document.getElementById('popupTitle').value = currentData.popup.title;
+    document.getElementById('popupContent').value = currentData.popup.content;
+    renderButtons();
+    updateJsonPreview();
+    markDirty();
+    logConsole('弹窗已恢复默认设置', 'success');
+}
+
+// ==================== 公告 ====================
+function onAnnouncementChange() {
+    var enabled = document.getElementById('announcementToggle').checked;
+    document.getElementById('announcementSettings').classList.toggle('hidden', !enabled);
+    currentData.announcement.enabled = enabled;
+    markDirty();
+    updateJsonPreview();
+    logConsole('页面公告: ' + (enabled ? '开启' : '关闭'), 'warn');
+}
+
+// 公告内容实时预览
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('announcementContent').addEventListener('input', function() {
+        currentData.announcement.content = this.value;
+        document.getElementById('announcementPreview').textContent = this.value || '(空)';
+        markDirty();
+        updateJsonPreview();
+    });
+
+    // 弹窗标题/内容实时同步
+    document.getElementById('popupTitle').addEventListener('input', function() {
+        currentData.popup.title = this.value;
+        markDirty();
+        updateJsonPreview();
+    });
+    document.getElementById('popupContent').addEventListener('input', function() {
+        currentData.popup.content = this.value;
+        markDirty();
+        updateJsonPreview();
+    });
+});
+
+// ==================== 数据同步 ====================
+function collectDataFromUI() {
+    currentData.maintenance = document.getElementById('maintenanceToggle').checked;
+    currentData.popup.enabled = document.getElementById('popupToggle').checked;
+    currentData.popup.title = document.getElementById('popupTitle').value;
+    currentData.popup.content = document.getElementById('popupContent').value;
+    currentData.announcement.enabled = document.getElementById('announcementToggle').checked;
+    currentData.announcement.content = document.getElementById('announcementContent').value;
+}
+
+function applyDataToUI() {
+    document.getElementById('maintenanceToggle').checked = currentData.maintenance;
+    document.getElementById('maintenanceHint').classList.toggle('hidden', !currentData.maintenance);
+
+    document.getElementById('popupToggle').checked = currentData.popup.enabled;
+    document.getElementById('popupSettings').classList.toggle('hidden', !currentData.popup.enabled);
+    document.getElementById('popupTitle').value = currentData.popup.title;
+    document.getElementById('popupContent').value = currentData.popup.content;
+    renderButtons();
+
+    document.getElementById('announcementToggle').checked = currentData.announcement.enabled;
+    document.getElementById('announcementSettings').classList.toggle('hidden', !currentData.announcement.enabled);
+    document.getElementById('announcementContent').value = currentData.announcement.content;
+    document.getElementById('announcementPreview').textContent = currentData.announcement.content || '(空)';
+}
+
+function updateJsonPreview() {
+    collectDataFromUI();
+    var json = JSON.stringify(currentData, null, 2);
+    document.getElementById('jsonPreview').innerHTML = syntaxHighlight(json);
+    // 同步编辑模式下的textarea
+    if (isEditMode) {
+        document.getElementById('jsonEditor').value = json;
+    }
+}
+
+// JSON 语法高亮
+function syntaxHighlight(json) {
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function(match) {
+        var cls = 'json-number';
+        if (/^"/.test(match)) {
+            if (/:$/.test(match)) {
+                cls = 'json-key';
+            } else {
+                cls = 'json-string';
+            }
+        } else if (/true|false/.test(match)) {
+            cls = 'json-boolean';
+        } else if (/null/.test(match)) {
+            cls = 'json-null';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+    }).replace(/([{}\[\]])/g, '<span class="json-brace">$1</span>');
+}
+
+// ==================== 工具函数 ====================
+function mergeData(defaults, data) {
+    var result = JSON.parse(JSON.stringify(defaults));
+    for (var key in data) {
+        if (data.hasOwnProperty(key)) {
+            if (typeof data[key] === 'object' && !Array.isArray(data[key]) && data[key] !== null) {
+                result[key] = mergeData(result[key], data[key]);
+            } else {
+                result[key] = data[key];
+            }
+        }
+    }
+    return result;
+}
+
+function escapeAttr(str) {
+    return str.replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function setSyncStatus(status, text) {
+    var dot = document.getElementById('syncStatusDot');
+    var txt = document.getElementById('syncStatusText');
+    txt.textContent = text;
+    if (status === 'ok') { dot.className = 'w-2 h-2 rounded-full bg-green-400'; }
+    else if (status === 'loading') { dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse'; }
+    else if (status === 'error') { dot.className = 'w-2 h-2 rounded-full bg-red-400'; }
+    else if (status === 'dirty') { dot.className = 'w-2 h-2 rounded-full bg-amber-400'; }
+    else { dot.className = 'w-2 h-2 rounded-full bg-slate-300'; }
+}
+
+// 标记数据已修改
+function markDirty() {
+    if (!isDirty) {
+        isDirty = true;
+        setSyncStatus('dirty', '待保存');
+    }
+}
+
+// 清除修改标记
+function clearDirty() {
+    isDirty = false;
+    savedData = JSON.parse(JSON.stringify(currentData));
+}
+
+function copyJson() {
+    var json = JSON.stringify(currentData, null, 2);
+    navigator.clipboard.writeText(json).then(function() {
+        logConsole('JSON 已复制到剪贴板', 'success');
+    }).catch(function() {
+        logConsole('复制失败，请手动复制', 'error');
+    });
+}
+
+// 是否正在编辑JSON（textarea可见）
+var isJsonEditing = false;
+
+// 切换编辑模式（显示/隐藏其他面板）
+function toggleEditMode() {
+    isEditMode = !isEditMode;
+    var btn = document.getElementById('btnEditMode');
+    var normalSections = document.getElementById('normalSections');
+    var jsonTitle = document.getElementById('jsonSectionTitle');
+    var btnJsonEdit = document.getElementById('btnJsonEdit');
+
+    if (isEditMode) {
+        // 进入编辑模式：隐藏其他面板，只显示JSON
+        btn.textContent = '切换为普通模式';
+        btn.className = 'px-3 py-1.5 bg-amber-50 text-amber-600 text-xs rounded-lg hover:bg-amber-100 transition font-medium';
+        normalSections.classList.add('hidden');
+        jsonTitle.textContent = 'JSON 数据编辑';
+        btnJsonEdit.classList.remove('hidden');
+        // 重置JSON编辑状态
+        isJsonEditing = false;
+        document.getElementById('jsonPreview').classList.remove('hidden');
+        document.getElementById('jsonEditArea').classList.add('hidden');
+        btnJsonEdit.textContent = '开始编辑';
+        logConsole('已切换为编辑模式', 'warn');
+    } else {
+        // 退出编辑模式：显示所有面板
+        btn.textContent = '切换为编辑模式';
+        btn.className = 'px-3 py-1.5 bg-indigo-50 text-indigo-600 text-xs rounded-lg hover:bg-indigo-100 transition font-medium';
+        normalSections.classList.remove('hidden');
+        jsonTitle.textContent = 'JSON 数据预览';
+        btnJsonEdit.classList.add('hidden');
+        // 退出JSON编辑状态
+        isJsonEditing = false;
+        document.getElementById('jsonPreview').classList.remove('hidden');
+        document.getElementById('jsonEditArea').classList.add('hidden');
+        logConsole('已切换为普通模式', 'info');
+    }
+}
+
+// 切换JSON编辑/预览（编辑模式下的子切换）
+function toggleJsonEditing() {
+    isJsonEditing = !isJsonEditing;
+    var preview = document.getElementById('jsonPreview');
+    var editArea = document.getElementById('jsonEditArea');
+    var editor = document.getElementById('jsonEditor');
+    var btn = document.getElementById('btnJsonEdit');
+    var statusEl = document.getElementById('jsonEditStatus');
+
+    if (isJsonEditing) {
+        // 开始编辑：显示textarea
+        preview.classList.add('hidden');
+        editArea.classList.remove('hidden');
+        editor.value = JSON.stringify(currentData, null, 2);
+        btn.textContent = '预览';
+        btn.className = 'px-3 py-1.5 bg-amber-500 text-white text-xs rounded-lg hover:bg-amber-600 transition font-medium';
+        statusEl.textContent = '直接修改 JSON，点击"应用修改"生效';
+        statusEl.style.color = '#94a3b8';
+        logConsole('JSON 编辑已开启', 'warn');
+    } else {
+        // 预览：显示语法高亮
+        editArea.classList.add('hidden');
+        preview.classList.remove('hidden');
+        btn.textContent = '开始编辑';
+        btn.className = 'px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 transition font-medium';
+        statusEl.textContent = '';
+        logConsole('JSON 预览模式', 'info');
+    }
+}
+
+// 应用 JSON 编辑
+function applyJsonEdit() {
+    var raw = document.getElementById('jsonEditor').value.trim();
+    var statusEl = document.getElementById('jsonEditStatus');
+    try {
+        var parsed = JSON.parse(raw);
+        currentData = mergeData(DEFAULT_DATA, parsed);
+        applyDataToUI();
+        updateJsonPreview();
+        markDirty();
+        statusEl.textContent = 'JSON 已应用，数据已更新';
+        statusEl.style.color = '#4ade80';
+        logConsole('JSON 编辑已应用', 'success');
+    } catch (e) {
+        statusEl.textContent = 'JSON 格式错误: ' + e.message;
+        statusEl.style.color = '#f87171';
+        logConsole('JSON 解析失败: ' + e.message, 'error');
+    }
+}
+
+// 取消 JSON 编辑
+function cancelJsonEdit() {
+    toggleJsonEditing();
+    logConsole('已取消编辑', 'info');
+}
+
+// 初始化控制台日志
+logConsole('控制面板已就绪', 'success');
+logConsole('Bin URL: ' + BIN_URL, 'info');
+</script>
+
+</body>
+</html>
