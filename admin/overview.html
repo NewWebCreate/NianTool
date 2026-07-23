@@ -71,48 +71,49 @@
      </div>
     </div> 
 
-<!-- ==========【网站响应检测板块】========== -->
+<!-- 独立测速卡片 单独模块 -->
 <div class="bg-white p-4 lg:p-6 rounded-xl border border-slate-200 shadow-sm">
-    <div class="flex items-center justify-between mb-4">
-        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">
-            网站响应检测 · tool.wunian.fun
+  <div class="flex justify-between items-center mb-4">
+    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">网站测速 · tool.wunian.fun</span>
+    <button id="speedTestBtn" class="px-3 py-1.5 bg-slate-900 text-white text-xs rounded-lg hover:bg-slate-700 transition">重新测速</button>
+  </div>
+  <!-- 固定高度容器，解决高度跳动核心 -->
+  <div style="min-height: 180px; display:flex; flex-direction:column; justify-content:center;">
+    <!-- 加载状态 -->
+    <div id="speedLoading" class="text-center text-slate-400 text-sm">请求中，请等待...</div>
+    <!-- 错误状态 -->
+    <div id="speedError" class="text-center text-red-400 text-sm hidden"></div>
+    <!-- 结果面板 -->
+    <div id="speedResult" class="hidden w-full">
+      <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <div class="text-[10px] uppercase text-slate-400 font-bold">HTTP状态码</div>
+          <div id="resCode" class="text-lg font-bold mt-1">-</div>
         </div>
-        <button id="btnReCheck" onclick="checkSiteResponse()" class="px-3 py-1.5 bg-slate-900 text-white text-xs rounded-lg hover:bg-slate-700 transition">
-            重新检测
-        </button>
-    </div>
-    <div id="check-loading" class="py-6 text-center text-slate-400 text-sm">
-        正在检测网站响应...
-    </div>
-    <div id="check-error" class="py-6 text-center text-red-400 text-sm hidden">
-        检测请求失败或超时，请稍后重试
-    </div>
-    <div id="check-result" class="hidden">
-        <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-                <div class="text-[10px] uppercase text-slate-400 font-bold">HTTP状态码</div>
-                <div id="res-http-code" class="text-lg font-bold mt-1">-</div>
-            </div>
-            <div>
-                <div class="text-[10px] uppercase text-slate-400 font-bold">总耗时</div>
-                <div id="res-total-ms" class="text-lg font-bold mt-1">- ms</div>
-            </div>
-            <div>
-                <div class="text-[10px] uppercase text-slate-400 font-bold">服务器IP</div>
-                <div id="res-ip" class="text-lg font-bold mt-1 font-mono text-sm">-</div>
-            </div>
-            <div>
-                <div class="text-[10px] uppercase text-slate-400 font-bold">页面大小</div>
-                <div id="res-size" class="text-lg font-bold mt-1">-</div>
-            </div>
-            <div class="col-span-2">
-                <div class="text-[10px] uppercase text-slate-400 font-bold">最终访问地址</div>
-                <div id="res-final-url" class="text-sm font-bold mt-1 break-all text-slate-700">-</div>
-            </div>
+        <div>
+          <div class="text-[10px] uppercase text-slate-400 font-bold">IP归属</div>
+          <div id="resLoc" class="text-lg font-bold mt-1">-</div>
         </div>
+        <div>
+          <div class="text-[10px] uppercase text-slate-400 font-bold">服务器IP</div>
+          <div id="resIp" class="text-lg font-bold mt-1">-</div>
+        </div>
+        <div>
+          <div class="text-[10px] uppercase text-slate-400 font-bold">平均延迟</div>
+          <div id="resAvg" class="text-lg font-bold mt-1">- ms</div>
+        </div>
+        <div>
+          <div class="text-[10px] uppercase text-slate-400 font-bold">最低延迟</div>
+          <div id="resMin" class="text-lg font-bold mt-1">- ms</div>
+        </div>
+        <div>
+          <div class="text-[10px] uppercase text-slate-400 font-bold">最高延迟</div>
+          <div id="resMax" class="text-lg font-bold mt-1">- ms</div>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
-<!-- ==========网站响应检测结束 ========== -->
 
 <!-- 数据表格 
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -147,73 +148,78 @@
    </main>
   </div>
 <script src="//cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
-  <script>
+<script>
+ (function(){
+   let running = false;
+   const apiUrl = "https://api.zbape.com/api/velocity/query?key=rqpR4LPtjWnzgacsZWqBusBxGXPt3GfP&url=tool.wunian.fun";
+   const btn = document.getElementById("speedTestBtn");
+   const loadingDom = document.getElementById("speedLoading");
+   const errorDom = document.getElementById("speedError");
+   const resultDom = document.getElementById("speedResult");
+   // 重置显示状态：每次测速先清空错误、结果，只展示加载
+   function resetView(){
+     loadingDom.classList.remove("hidden");
+     errorDom.classList.add("hidden");
+     resultDom.classList.add("hidden");
+   }
+   // 填充接口返回测速数据
+   function fillData(data, code){
+     document.getElementById("resCode").innerText = code || "-";
+     document.getElementById("resLoc").innerText = data.location || "-";
+     document.getElementById("resIp").innerText = data.ip || "-";
+     document.getElementById("resAvg").innerText = data.average || "-";
+     document.getElementById("resMin").innerText = data.min || "-";
+     document.getElementById("resMax").innerText = data.max || "-";
+     document.getElementById("resHost").innerText = data.host || "-";
+   }
+   // 测速主逻辑
+   async function testSpeed(){
+     if(running) return;
+     running = true;
+     btn.disabled = true;
+     btn.innerText = "测速中...";
+     // 每次测速强制重置，清除上一次错误提示（修复残留bug核心）
+     resetView();
+     const controller = new AbortController();
+     const timer = setTimeout(()=>controller.abort(),5000);
+     try{
+       const resp = await fetch(apiUrl, {signal:controller.signal});
+       clearTimeout(timer);
+       const res = await resp.json();
+       if(res.code !== 200) throw new Error(res.msg || "接口返回异常");
+       // 请求成功，隐藏加载，展示结果
+       loadingDom.classList.add("hidden");
+       resultDom.classList.remove("hidden");
+       fillData(res.data, res.code);
+     }catch(e){
+       clearTimeout(timer);
+       // 仅异常时显示错误，下一次测速会被resetView清除
+       loadingDom.classList.add("hidden");
+       errorDom.classList.remove("hidden");
+       console.log("测速报错：",e);
+     }finally{
+       running = false;
+       btn.disabled = false;
+       btn.innerText = "重新测速";
+     }
+   }
+   // 页面全部资源加载完成后自动测速
+   window.addEventListener("load",()=>{
+     setTimeout(testSpeed,200);
+   })
+   // 按钮点击触发测速
+   btn.addEventListener("click",testSpeed);
+ })();
+ </script>
+<script>
         let isChecking = false;
 
         function toggleMenu() {
             document.getElementById('sidebar').classList.toggle('-translate-x-full');
             document.getElementById('mask').classList.toggle('hidden');
-        }
+         }
 
-
-        // =========网站响应检测请求函数【独立任务，不受其他任务影响】=========
-        async function checkSiteResponse(){
-            if(isChecking) return;
-            isChecking = true;
-            const btn = document.getElementById("btnReCheck");
-            btn.disabled = true;
-            btn.innerText = "检测中...";
-
-            //重置UI
-            document.getElementById('check-loading').classList.remove('hidden');
-            document.getElementById('check-error').classList.add('hidden');
-            document.getElementById('check-result').classList.add('hidden');
-
-            //5秒超时控制器
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(),5000);
-
-            try {
-                console.log("开始发起网站检测请求");
-                const response = await fetch(
-                  "https://apione.apibyte.cn/sitecheck?url=https://tool.wunian.fun",
-                  {
-                    method: "GET",
-                    headers: {
-                        "X-Api-Key": "Shanhai-jMFqfvUPPVExNMwNcKxwK6pRigKJzCtSU7AWfL7Wg1eW6EIh"
-                    },
-                    signal: controller.signal
-                  }
-                );
-                clearTimeout(timeoutId);
-                const data = await response.json();
-                console.log("检测返回数据：",data);
-
-                document.getElementById('check-loading').classList.add('hidden');
-                document.getElementById('check-result').classList.remove('hidden');
-
-                document.getElementById('res-http-code').innerText = data?.data?.http_code ?? "-";
-                document.getElementById('res-total-ms').innerText = (data?.data?.timing?.total_ms ?? "-") + " ms";
-                document.getElementById('res-ip').innerText = data?.data?.primary_ip ?? "-";
-                document.getElementById('res-size').innerText = data?.data?.page_size_human ?? "-";
-                document.getElementById('res-final-url').innerText = data?.data?.final_url ?? "-";
-
-            } catch (err) {
-                clearTimeout(timeoutId);
-                console.error("检测异常/超时",err);
-                document.getElementById('check-loading').classList.add('hidden');
-                document.getElementById('check-error').classList.remove('hidden');
-            }finally{
-                isChecking = false;
-                btn.disabled = false;
-                btn.innerText = "重新检测";
-            }
-        }
-
-        //DOM加载完成，两个任务完全独立执行，互不阻塞
-        document.addEventListener("DOMContentLoaded",function(){
-            checkSiteResponse();
-        })
+        document.addEventListener("DOMContentLoaded",function(){})
     </script>
  </body>
 </html>
